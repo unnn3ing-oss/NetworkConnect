@@ -1,0 +1,74 @@
+name: Release
+
+# 只在推送 v* tag 時執行：測試 → 打包（Mac arm64 dmg、Windows x64 exe，含冒煙測試）→ 建立 GitHub Release「草稿」。
+# 草稿不會自動發布，需要在 GitHub 網頁確認後手動按「Publish release」。
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  check-version:
+    name: check-version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: tag 必須與 package.json 的 version 相同
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          echo "tag=$TAG package.json=$version"
+          test "$TAG" = "v$version"
+
+  test:
+    name: test (${{ matrix.os }})
+    needs: check-version
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    env:
+      ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm test
+
+  package:
+    name: package
+    needs: test
+    uses: ./.github/workflows/package.yml
+
+  release:
+    name: release (draft)
+    needs: package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: NetworkConnect-*
+          path: artifacts
+          merge-multiple: true
+      - name: 建立 Release 草稿
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          ls -l artifacts
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            gh release upload "$TAG" artifacts/* --clobber
+          else
+            gh release create "$TAG" artifacts/* --draft --verify-tag --title "NetworkConnect $TAG" --generate-notes
+          fi

@@ -1,0 +1,90 @@
+name: Package
+
+# 可重複使用的打包流程（由 ci.yml 與 release.yml 呼叫，不單獨觸發）：
+# 下載 go2rtc → 打包 → 檢查 go2rtc 已隨附（Mac 並檢查簽章）→ Electron 冒煙測試 → 上傳 workflow artifacts。
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: package (${{ matrix.label }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: mac-arm64
+            os: macos-latest
+            script: dist:mac
+            artifact: NetworkConnect-mac-arm64
+            pattern: dist/*.dmg
+          - label: win-x64
+            os: windows-latest
+            script: dist:win
+            artifact: NetworkConnect-win-x64
+            pattern: dist/*.exe
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+
+      - name: 確認是 Apple 晶片 runner
+        if: matrix.label == 'mac-arm64'
+        run: |
+          arch="$(uname -m)"
+          echo "runner arch: $arch"
+          test "$arch" = "arm64"
+
+      # dist:mac／dist:win 會先執行 scripts/fetch-go2rtc.js（依 config.go2rtcVersion 下載並比對 sha256），再呼叫 electron-builder
+      - name: 打包
+        run: npm run ${{ matrix.script }}
+
+      - name: 檢查 go2rtc 已隨附並已簽章（macOS）
+        if: matrix.label == 'mac-arm64'
+        run: |
+          app="dist/mac-arm64/NetworkConnect.app"
+          bin="$app/Contents/Resources/go2rtc/go2rtc"
+          test -x "$bin"
+          lipo -archs "$bin" | grep -qx arm64
+          codesign --verify --deep --strict --verbose=2 "$app"
+          codesign --verify --strict --verbose=2 "$bin"
+          sig="$(codesign -dv "$bin" 2>&1)"
+          echo "$sig"
+          echo "$sig" | grep -q "Signature=adhoc"
+          plutil -extract NSLocalNetworkUsageDescription raw "$app/Contents/Info.plist"
+          hdiutil verify dist/*.dmg
+
+      - name: 檢查 go2rtc 已隨附（Windows）
+        if: matrix.label == 'win-x64'
+        shell: pwsh
+        run: |
+          if (-not (Test-Path dist/win-unpacked/resources/go2rtc/go2rtc.exe)) { throw "找不到 go2rtc.exe" }
+          Get-ChildItem dist/*.exe | ForEach-Object { "$($_.Name) $($_.Length) bytes" }
+
+      - name: Electron 冒煙測試（打包後的 App）
+        shell: bash
+        env:
+          MATRIX_LABEL: ${{ matrix.label }}
+        run: |
+          if [ "$MATRIX_LABEL" = "mac-arm64" ]; then
+            export NC_SMOKE_EXECUTABLE="$PWD/dist/mac-arm64/NetworkConnect.app/Contents/MacOS/NetworkConnect"
+          else
+            export NC_SMOKE_EXECUTABLE="$PWD/dist/win-unpacked/NetworkConnect.exe"
+          fi
+          echo "smoke executable: $NC_SMOKE_EXECUTABLE"
+          npm run test:desktop
+
+      - name: 上傳安裝檔
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.pattern }}
+          if-no-files-found: error
+          retention-days: 14
