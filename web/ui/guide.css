@@ -1,0 +1,111 @@
+/* 全螢幕導覽 nc-guide（視覺同 QPT .ds-*）。需先載入 tokens.css、base.css。 */
+.nc-guide {
+  position: fixed; inset: 0; z-index: var(--z-guide); display: flex; flex-direction: column; color: var(--text); font-family: var(--font-body); text-align: left; outline: none;
+  background:
+    radial-gradient(1100px 620px at 12% -8%, color-mix(in srgb, var(--accent) 14%, transparent) 0, transparent 62%),
+    radial-gradient(900px 560px at 104% 108%, color-mix(in srgb, var(--accent) 10%, transparent) 0, transparent 58%),
+    var(--bg);
+}
+.nc-guide-shell { flex: 1 1 auto; min-height: 0; width: 100%; max-width: 1280px; margin: 0 auto; padding: 0 36px; display: flex; flex-direction: column; }
+
+.nc-guide-head { display: flex; align-items: flex-start; gap: 14px; padding: 24px 0 4px; }
+.nc-guide-title h2 { margin: 0; font-size: 24px; font-weight: 800; }
+.nc-guide-title p { margin: 5px 0 0; font-size: 14px; color: var(--muted); }
+.nc-guide-close {
+  margin: 0 0 0 auto; flex: none; display: grid; place-items: center; width: 42px; height: 42px; padding: 0; border-radius: 50%;
+  border: 1px solid var(--border); background: var(--surface); color: var(--muted); box-shadow: 0 6px 16px -10px rgba(0, 43, 102, .5);
+  transition: color .15s ease, border-color .15s ease;
+}
+.nc-guide-close:hover { color: var(--text); border-color: var(--accent); }
+
+/* 進度列：圓點＋文字，已完成的打勾；點圓點可以跳到那一步 */
+.nc-guide-steps { list-style: none; counter-reset: ncg; display: flex; align-items: center; margin: 18px 0 4px; padding: 0; }
+.nc-guide-step { counter-increment: ncg; display: flex; align-items: center; flex: 0 0 auto; min-width: 0; }
+.nc-guide-step + .nc-guide-step { flex: 1 1 auto; }
+.nc-guide-step + .nc-guide-step::before { content: ""; flex: 1 1 12px; min-width: 12px; height: 3px; margin: 0 10px; border-radius: 3px; background: var(--border); transition: background .35s ease; }
+.nc-guide-step.done::before, .nc-guide-step.current::before { background: var(--ok); }
+.nc-guide-step-btn {
+  display: inline-flex; align-items: center; gap: 9px; margin: 0; padding: 4px 6px 4px 4px; border: 0; border-radius: var(--radius-pill);
+  background: none; color: var(--muted); white-space: nowrap;
+}
+.nc-guide-step-btn:hover { color: var(--text); }
+.nc-guide-dot {
+  display: inline-grid; place-items: center; flex: none; width: 30px; height: 30px; border-radius: 50%;
+  background: var(--surface); border: 2px solid var(--border); color: var(--muted); font-size: 13px; font-weight: 700;
+  transition: background .25s ease, border-color .25s ease, color .25s ease, box-shadow .25s ease;
+}
+.nc-guide-dot::before { content: counter(ncg); }
+.nc-guide-lbl { font-size: 14px; font-weight: 600; }
+.nc-guide-step.done .nc-guide-dot { background: var(--ok); border-color: var(--ok); color: var(--surface); }
+.nc-guide-step.done .nc-guide-dot::before { content: "✓"; }
+.nc-guide-step.current .nc-guide-dot { background: var(--accent); border-color: var(--accent); color: var(--on-accent); box-shadow: 0 0 0 5px var(--accent-soft); }
+.nc-guide-step.current .nc-guide-step-btn { color: var(--accent); }
+.nc-guide-step.current .nc-guide-lbl { font-weight: 800; }
+
+.nc-guide-main { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 18px 16px 20px; margin: 0 -16px; }   /* 左右留白，避免示意卡的陰影被捲動區裁掉 */
+.nc-guide-pane { min-height: 100%; display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(0, 1fr); gap: 40px; align-items: center; }
+.nc-guide-art { padding: 14px; border-radius: 26px; background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow); }
+.nc-guide-art svg { display: block; width: 100%; height: auto; border-radius: 16px; background: linear-gradient(180deg, var(--accent-soft), var(--track)); }
+.nc-guide-art:empty { display: none; }
+.nc-guide-text { min-width: 0; max-width: 520px; }
+.nc-guide-kicker { margin: 0 0 6px; font-size: 13px; font-weight: 800; letter-spacing: .08em; color: var(--accent); }
+.nc-guide-text h3 { margin: 0 0 10px; font-size: 28px; line-height: 1.25; font-weight: 800; outline: none; }
+.nc-guide-text p { line-height: 1.7; }
+.nc-guide-text code { background: var(--accent-soft); color: var(--accent); padding: 2px 8px; border-radius: 8px; font: 600 .92em var(--font-mono); word-break: break-all; }
+.nc-guide-text kbd { display: inline-block; min-width: 1.6em; padding: 1px 7px; border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 7px; background: var(--surface); font: 700 .85em var(--font-mono); text-align: center; }
+.nc-guide-text ol.nc-do { list-style: none; counter-reset: ncdo; margin: 14px 0 12px; padding: 0; display: grid; gap: 12px; }
+.nc-guide-text ol.nc-do li { counter-increment: ncdo; position: relative; padding-left: 38px; line-height: 1.7; }
+.nc-guide-text ol.nc-do li::before { content: counter(ncdo); position: absolute; left: 0; top: 1px; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: var(--on-accent); font-size: 13px; font-weight: 700; }
+.nc-guide-text .nc-tip { margin: 14px 0 0; padding: 11px 14px; border-radius: var(--radius-m); background: var(--accent-soft); font-size: 14px; line-height: 1.7; }
+
+.nc-guide-msg { margin: 0; min-height: 0; color: var(--danger); font-size: 14px; font-weight: 600; text-align: center; }
+.nc-guide-msg:not(:empty) { padding: 6px 0; }
+.nc-guide-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 0 calc(18px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--border); }
+.nc-guide-foot .btn { min-width: 124px; padding: 12px 26px; font-size: 16px; }
+.nc-guide-count { font-size: 14px; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* 進場／換步動畫（尊重減少動態） */
+@media (prefers-reduced-motion: no-preference) {
+  .nc-guide { animation: nc-guide-in .24s ease both; }
+  .nc-guide-pane:not([hidden]) .nc-guide-art { animation: nc-guide-art .35s ease both; }
+  .nc-guide-pane:not([hidden]) .nc-guide-text { animation: nc-guide-text .35s .05s ease both; }
+  .nc-guide-art.play svg .nc-pop { animation: nc-guide-pop .45s var(--d, 0s) cubic-bezier(.2, .9, .3, 1.15) both; }
+  .nc-guide-art.play svg .nc-fade { animation: nc-fade .5s ease both; }
+}
+@keyframes nc-guide-in { from { opacity: 0; transform: scale(1.012); } to { opacity: 1; transform: none; } }
+@keyframes nc-guide-art { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes nc-guide-text { from { opacity: 0; transform: translateX(14px); } to { opacity: 1; transform: none; } }
+@keyframes nc-guide-pop { from { opacity: 0; transform: translateY(8px) scale(.97); } to { opacity: 1; transform: none; } }
+
+@media (max-width: 900px) {
+  .nc-guide-shell { padding: 0 18px; }
+  .nc-guide-head { padding-top: 16px; }
+  .nc-guide-title h2 { font-size: 20px; }
+  .nc-guide-title p { font-size: 13px; }
+  .nc-guide-lbl { display: none; }
+  .nc-guide-step.current .nc-guide-lbl { display: inline; }
+  .nc-guide-step + .nc-guide-step::before { margin: 0 4px; min-width: 6px; }
+  .nc-guide-pane { grid-template-columns: minmax(0, 1fr); gap: 18px; align-items: start; }
+  .nc-guide-art { max-width: 560px; margin: 0 auto; width: 100%; }
+  .nc-guide-text { max-width: none; }
+  .nc-guide-text h3 { font-size: 23px; }
+}
+@media (max-width: 480px) {
+  .nc-guide-step-btn { padding-right: 2px; }
+  .nc-guide-dot { width: 26px; height: 26px; font-size: 12px; }
+  .nc-guide-foot .btn { min-width: 0; flex: 1 1 0; }
+  .nc-guide-count { display: none; }
+}
+
+/* 示意圖（SVG）可用的調色 class：不能寫行內 style，顏色一律走 token，淺／深色自動切換 */
+.nc-guide-art .sv-surface { fill: var(--surface); }
+.nc-guide-art .sv-soft { fill: var(--accent-soft); }
+.nc-guide-art .sv-track { fill: var(--track); }
+.nc-guide-art .sv-acc { fill: var(--accent); }
+.nc-guide-art .sv-ok { fill: var(--ok); }
+.nc-guide-art .sv-edge { fill: none; stroke: var(--border); stroke-width: 1.5; }
+.nc-guide-art .sv-line { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; opacity: .55; }
+.nc-guide-art .sv-ico { fill: none; stroke: var(--accent); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.nc-guide-art .sv-t { fill: var(--text); font: 600 12px var(--font-body); }
+.nc-guide-art .sv-t.m { fill: var(--muted); font-size: 10.5px; }
+.nc-guide-art .sv-t.w { fill: var(--on-accent); }

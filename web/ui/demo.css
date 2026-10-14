@@ -1,0 +1,13 @@
+/* 只給 demo.html 用的版面 */
+.demo { max-width: 960px; margin: 0 auto; padding: 24px 20px 64px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; }
+.row > * { min-width: 0; }
+.demo-sec h2 { margin: 0 0 14px; font-size: 17px; font-weight: 800; }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 12px; }
+.row:last-child { margin-bottom: 0; }
+.demo-field { flex: 1 1 240px; }
+.muted { color: var(--muted); font-size: 13px; margin: 0; }
+.icon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 10px; }
+.icon-cell { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 6px; border: 1px solid var(--border); border-radius: var(--radius-m); background: var(--surface-2); color: var(--accent); font-size: 11.5px; text-align: center; }
+.icon-cell span { color: var(--muted); overflow-wrap: anywhere; }
+@media (max-width: 820px) { .demo { padding: 16px 16px 48px; } }
+@media (max-width: 480px) { .brand-text { display: none; } }

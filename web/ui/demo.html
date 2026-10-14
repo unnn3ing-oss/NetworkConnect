@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NetworkConnect UI 元件庫</title>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; style-src 'self'; connect-src 'self'">
+  <link rel="stylesheet" href="tokens.css">
+  <link rel="stylesheet" href="base.css">
+  <link rel="stylesheet" href="components.css">
+  <link rel="stylesheet" href="guide.css">
+  <link rel="stylesheet" href="wizard.css">
+  <link rel="stylesheet" href="demo.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1 class="brand" id="brand"></h1>
+    <span class="grow"></span>
+    <div class="tools" id="themeHost"></div>
+  </header>
+
+  <main class="demo">
+    <section class="card demo-sec">
+      <h2>按鈕與輸入框</h2>
+      <div class="row">
+        <button class="btn" type="button">次要</button>
+        <button class="btn primary" type="button">主要</button>
+        <button class="btn danger" type="button">危險</button>
+        <button class="btn small" type="button">小按鈕</button>
+        <button class="btn primary" type="button" disabled>停用</button>
+      </div>
+      <div class="row">
+        <label class="nc-field demo-field"><span class="nc-field-label">設備名稱</span><input class="input" placeholder="客廳 Mesh 主節點"></label>
+        <label class="nc-field demo-field"><span class="nc-field-label">搜尋</span><input class="input pill" type="search" placeholder="搜尋設備、IP、MAC"></label>
+      </div>
+    </section>
+
+    <section class="card demo-sec">
+      <h2>分段與篩選 chips</h2>
+      <div class="row" id="segHost"></div>
+      <div class="row" id="chipHost"></div>
+      <p class="muted" id="chipOut"></p>
+    </section>
+
+    <section class="card demo-sec">
+      <h2>燈號</h2>
+      <div class="row" id="statusHost"></div>
+    </section>
+
+    <section class="card demo-sec">
+      <h2>對話框、通知、抽屜、精靈、導覽</h2>
+      <div class="row">
+        <button class="btn" type="button" id="btnToast">通知</button>
+        <button class="btn" type="button" id="btnToastErr">錯誤通知</button>
+        <button class="btn" type="button" id="btnConfirm">確認對話框</button>
+        <button class="btn danger" type="button" id="btnDanger">危險確認</button>
+        <button class="btn" type="button" id="btnDrawer">抽屜</button>
+        <button class="btn primary" type="button" id="btnWizard">新增設備精靈</button>
+        <button class="btn primary" type="button" id="btnGuide">首次導覽</button>
+      </div>
+    </section>
+
+    <section class="card demo-sec">
+      <h2>空狀態</h2>
+      <div id="emptyHost"></div>
+    </section>
+
+    <section class="card demo-sec">
+      <h2>圖示（設備類別與導覽）</h2>
+      <div class="icon-grid" id="iconHost"></div>
+    </section>
+  </main>
+
+  <script type="module" src="demo.js"></script>
+</body>
+</html>
