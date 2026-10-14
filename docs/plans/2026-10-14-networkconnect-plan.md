@@ -42,6 +42,8 @@ Phase 0（地基，2 個 agent 並行）     Phase 1（功能，6 個 agent 並�
 - [ ] `node server/cli.js --data-dir <暫存資料夾> --port 0` 可啟動並在 stdout 印出實際埠號；`startServer()` 回傳 `{port, url, stop}`，`stop()` 後行程可正常結束
 - [ ] 主控 agent 審閱契約後**凍結**（之後改契約需走 Change Request）
 
+> ✅ **G0 已通過（2026-10-14）**：261 項測試全綠、故障隔離與啟動入口經主控實測。`contracts/` 自 commit `b132646` 起**凍結**，修改一律走 Change Request。
+
 ### G1：功能完成（Phase 2 開工條件）
 
 - [ ] 六個分支各自 `npm test` 全綠，依序合併後整體 `npm test` 仍全綠
