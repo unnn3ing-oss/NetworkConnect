@@ -20,7 +20,7 @@
 | F6 | NVR 監視畫面 | 精靈式設定 NVR（品牌模板＋測試連線），1／4／9／16 分割即時畫面，點兩下看主碼流 |
 | F7 | 首次使用導覽 | 全螢幕導覽（同 QPT「全螢幕安裝教學」）：建樓層 → 平面圖 → 房間 → 設備 → NVR |
 | F8 | 備份 | 一鍵匯出／匯入 JSON（預設不含密碼） |
-| F9 | 桌面 App | macOS（Apple 晶片＋Intel）與 Windows 安裝檔；選單列／系統匣圖示、開機自動啟動、關鍵設備離線的系統通知、手機連線 QR Code |
+| F9 | 桌面 App | macOS（**僅 Apple 晶片**）與 Windows 安裝檔；選單列／系統匣圖示、開機自動啟動、關鍵設備離線的系統通知、手機連線 QR Code |
 
 ### 不做（v1，列入 §12 後續）
 
@@ -44,12 +44,12 @@
 | 執行環境 | Node.js（開發與測試用，版本與 Electron 內建的 Node 對齊，寫在 `.nvmrc`） | 22 LTS 以上 | 與 hottopic 等既有專案一致；`node:test` 內建測試；不使用原生模組，避免跨平台編譯問題 |
 | 後端框架 | Fastify | 5.x 鎖定次版號 | **plugin 封裝＝模組隔離**；路由直接吃 JSON Schema 驗證，契約即程式 |
 | 儲存 | JSON 檔（原子寫入）＋ Repository 介面 | — | 家用 < 300 台設備綽綽有餘；備份就是複製檔案；之後要換 SQLite 只改一個檔 |
-| 串流轉換 | go2rtc（App 內附執行檔，由 nvr 模組啟動） | 版本只寫在 `package.json` 的 `config.go2rtcVersion`（單一來源） | 單一執行檔、有 macOS arm64／x64 與 Windows x64 版，RTSP → MSE；**不內附 ffmpeg**（見 §8.4） |
+| 串流轉換 | go2rtc（App 內附執行檔，由 nvr 模組啟動） | 版本只寫在 `package.json` 的 `config.go2rtcVersion`（單一來源） | 單一執行檔、有 macOS arm64 與 Windows x64 版，RTSP → MSE；**不內附 ffmpeg**（見 §8.4） |
 | 前端 | 原生 ES Modules，無建置步驟 | — | 與 QPT／hottopic 一致；agent 不需處理打包問題，試錯最少 |
 | 架構圖 | Cytoscape.js（vendored） | 鎖定確切版本 | 內建 `breadthfirst` 樹狀排版，不需額外外掛；canvas 繪製不違反 CSP |
 | 平面圖 | 自製（CSS transform＋pointer events） | — | 需求單純，不引入函式庫 |
 | 測試 | `node:test`、ajv（契約驗證）、Playwright（網頁 E2E＋`_electron` App 冒煙測試） | Chromium 已預裝於 `/opt/pw-browsers` | |
-| 打包 | electron-builder | 鎖確切版本 | macOS `.dmg`（arm64、x64 各一）、Windows NSIS `.exe`（x64，免系統管理員權限） |
+| 打包 | electron-builder | 鎖確切版本 | macOS `.dmg`（僅 arm64，Apple 晶片）、Windows NSIS `.exe`（x64，免系統管理員權限） |
 | CI | GitHub Actions | — | 雲端開發容器是 Linux，**Mac／Windows 的測試與打包一律在 Actions 的 macos／windows runner 上驗證** |
 
 **電腦建議**：一台常開、接有線網路的桌機或 Mac mini。**電腦睡眠時偵測會停止**；筆電闔上螢幕也會睡眠，不適合當主機。App 提供「偵測期間防止電腦閒置睡眠」選項。
@@ -358,7 +358,7 @@ NetworkConnect/
 
 ## 12. 後續版本（Backlog）
 
-自動掃描網段（ARP）建議新增、Zyxel／交換器 SNMP 流量、LINE 離線告警、NVR 回放、房間多邊形與熱區、PDF 平面圖、SQLite 儲存、多使用者、**付費程式碼簽章與自動更新**、Linux／NAS 無介面版（Docker）、Windows ARM 版。
+自動掃描網段（ARP）建議新增、Zyxel／交換器 SNMP 流量、LINE 離線告警、NVR 回放、房間多邊形與熱區、PDF 平面圖、SQLite 儲存、多使用者、**付費程式碼簽章與自動更新**、Linux／NAS 無介面版（Docker）、Windows ARM 版、Intel Mac 版（需要時只要在打包設定加 x64 目標與對應 go2rtc）。
 
 ## 13. 待你確認（不阻擋開工，先用預設值）
 

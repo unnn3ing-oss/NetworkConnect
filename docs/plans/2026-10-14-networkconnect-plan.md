@@ -47,7 +47,7 @@ Phase 0（地基，2 個 agent 並行）     Phase 1（功能，6 個 agent 並�
 - [ ] 六個分支各自 `npm test` 全綠，依序合併後整體 `npm test` 仍全綠
 - [ ] 合併順序：B1 → B2 → B4 → B3 → B5 → D1（資料源先進，消費者後進，外殼最後）
 - [ ] GitHub Actions `ci.yml` 在 ubuntu／macos／windows 三平台全綠（含各平台真實 ping `127.0.0.1` 測試）
-- [ ] `release.yml` 手動觸發可產出 `.dmg`（arm64、x64）與 `.exe`，並通過 Electron 冒煙測試（App 啟動 → 視窗載入 → `/api/system/health` 正常 → 結束後無殘留 go2rtc 行程）
+- [ ] `release.yml` 手動觸發可產出 `.dmg`（arm64）與 `.exe`，並通過 Electron 冒煙測試（App 啟動 → 視窗載入 → `/api/system/health` 正常 → 結束後無殘留 go2rtc 行程）
 - [ ] `npm run dev:mock` 下五個分頁都能操作；停用任一模組其他仍正常
 
 ### G2：整合完成
