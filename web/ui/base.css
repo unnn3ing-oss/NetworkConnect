@@ -1,0 +1,83 @@
+/* 基礎樣式：字型、按鈕（三種 pill）、chips、輸入框、卡片、頁面背景、頂欄、[hidden]。需先載入 tokens.css。 */
+*, *::before, *::after { box-sizing: border-box; }
+html.nc-lock, html.nc-lock body { overflow: hidden; }
+body {
+  margin: 0; min-height: 100vh; background: var(--page-bg); background-color: var(--bg);
+  color: var(--text); font-family: var(--font-body); font-size: 15px; line-height: 1.6;
+  -webkit-text-size-adjust: 100%;
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+[hidden] { display: none !important; }
+h1, h2, h3 { line-height: 1.3; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ---- 按鈕：全站三種 pill——次要（.btn）、主要（.btn.primary）、危險（.btn.danger） ---- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  border: 0; background: var(--track); border-radius: var(--radius-pill); padding: 10px 20px;
+  font-size: 14px; font-weight: 600; line-height: 1.3; color: var(--text); white-space: nowrap;
+  transition: background .15s ease, color .15s ease, box-shadow .15s ease;
+}
+.btn:hover { background: var(--surface); color: var(--accent); box-shadow: 0 0 0 1px var(--border); }
+.btn.primary { background: var(--accent); color: var(--on-accent); box-shadow: 0 8px 20px -10px var(--accent-glow); }
+.btn.primary:hover { background: var(--accent-dark); color: var(--on-accent); box-shadow: 0 8px 20px -10px var(--accent-glow); }
+.btn.danger { background: transparent; color: var(--danger); box-shadow: inset 0 0 0 1.5px var(--danger); }
+.btn.danger:hover { background: var(--danger); color: var(--surface); box-shadow: inset 0 0 0 1.5px var(--danger); }
+.btn.small { padding: 6px 14px; font-size: 13px; }
+.btn[disabled] { opacity: .4; cursor: not-allowed; }
+.btn[disabled]:hover { background: var(--track); color: var(--text); box-shadow: none; }
+.btn.primary[disabled]:hover { background: var(--accent); color: var(--on-accent); }
+.btn.danger[disabled]:hover { background: transparent; color: var(--danger); box-shadow: inset 0 0 0 1.5px var(--danger); }
+.btn .nc-icon { flex: none; }
+
+/* ---- chips（篩選） ---- */
+.chip {
+  display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--border); background: var(--surface);
+  border-radius: var(--radius-pill); padding: 4px 14px; font-size: 13px; color: var(--muted);
+  transition: border-color .15s ease, background .15s ease, color .15s ease;
+}
+.chip:hover { border-color: var(--chip-edge); }
+.chip small { font-family: var(--font-mono); font-size: 11px; opacity: .85; }
+.chip[aria-pressed="true"], .chip.on { background: var(--chip-bg); border-color: var(--chip-edge); color: var(--chip-fg); font-weight: 700; }
+
+/* ---- 輸入框 ---- */
+.input, input[type="text"].input, input[type="search"].input {
+  width: 100%; border: 1px solid var(--border); background: var(--surface); color: var(--text);
+  border-radius: var(--radius-m); padding: 10px 14px; font-size: 14px; line-height: 1.4;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.input::placeholder { color: var(--muted); }
+.input:focus-visible { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+textarea.input { resize: vertical; min-height: 84px; }
+select.input { appearance: none; padding-right: 36px; background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%); background-position: calc(100% - 20px) 50%, calc(100% - 14px) 50%; background-size: 6px 6px; background-repeat: no-repeat; }
+.input.pill { border-radius: var(--radius-pill); background: var(--track); border-color: transparent; padding-inline: 18px; }
+.input.pill:focus-visible { background: var(--surface); }
+
+/* 欄位：標籤＋控制項＋提示 */
+.nc-field { display: grid; gap: 6px; font-size: 14px; }
+.nc-field-label { font-weight: 700; }
+.nc-field-label .nc-req { color: var(--danger); font-style: normal; }
+.nc-field-hint { color: var(--muted); font-size: 12.5px; }
+
+/* ---- 卡片 ---- */
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-l); box-shadow: var(--shadow); padding: 20px; }
+.card.flat { box-shadow: none; border-radius: 16px; }
+
+/* ---- 頂欄：sticky、半透明模糊 ---- */
+.topbar {
+  position: sticky; top: 0; z-index: var(--z-topbar); height: var(--topbar-h); padding: 0 28px;
+  display: flex; align-items: center; gap: 16px;
+  background: var(--bar-bg); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); border-bottom: 1px solid var(--border);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .topbar { background: var(--surface); } }
+.topbar h1, .topbar .brand { margin: 0; font-size: 19px; font-weight: 800; letter-spacing: .02em; white-space: nowrap; display: inline-flex; align-items: center; gap: 8px; }
+.topbar .grow { flex: 1 1 auto; min-width: 0; }
+.topbar .tools { display: flex; gap: 10px; align-items: center; margin-left: auto; }
+@media (max-width: 820px) { .topbar { padding: 0 16px; gap: 10px; } }
+
+@media (prefers-reduced-motion: reduce) {
+  * { scroll-behavior: auto !important; }
+  .btn, .chip, .input { transition: none; }
+}

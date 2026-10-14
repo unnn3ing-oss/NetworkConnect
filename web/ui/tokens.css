@@ -1,0 +1,73 @@
+/* NetworkConnect 設計 token：沿用 hottopic（淺／深色）＋設備燈號。
+ * 主題：預設跟隨系統；在 <html> 設定 data-theme="light" 或 "dark" 可強制切換。 */
+:root {
+  color-scheme: light;
+  --accent: #004aad; --accent-dark: #003a87; --accent-soft: #e8f0fc;
+  --text: #1f2a3d; --muted: #6b7890;
+  --border: rgba(0, 74, 173, .12); --track: rgba(0, 74, 173, .07);
+  --shadow: 0 24px 60px -30px rgba(0, 43, 102, .35);
+  --ring: 0 4px 14px -6px rgba(0, 74, 173, .5);
+  --chip-bg: #dbeafe; --chip-edge: #93c5fd; --chip-fg: #1e40af;
+  --bar-bg: rgba(255, 255, 255, .86);
+  --page-bg: radial-gradient(900px 500px at 8% -10%, #dce8ff, transparent 60%), radial-gradient(800px 500px at 100% 0, #e4eeff, transparent 60%), #f4f7fd;
+  --bg: #f4f7fd; --surface: #ffffff; --surface-2: #fafbfc;
+  --on-accent: #ffffff;
+  --scrim: rgba(20, 34, 64, .38);
+  --accent-glow: rgba(0, 74, 173, .7);
+
+  --ok: #16a34a; --danger: #d93636; --warn: #b7791f;
+  --ok-soft: #e3f6ea; --danger-soft: #fdeaea; --warn-soft: #fdf1d8; --warn-fg: #6b4a00;
+
+  /* 設備燈號 */
+  --st-up: #16a34a;        /* 連線正常 */
+  --st-down: #d93636;      /* 關鍵設備離線（警示） */
+  --st-offline: #8b97ab;   /* 非關鍵設備離線（灰） */
+  --st-unknown: #e0a100;   /* 尚未檢查／檢查出錯（黃） */
+  --st-disabled: #c3cbd9;  /* 未監控 */
+
+  --topbar-h: 64px;
+  --radius-s: 10px; --radius-m: 14px; --radius-l: 22px; --radius-pill: 999px;
+  --font-body: system-ui, "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --z-topbar: 40; --z-drawer: 120; --z-guide: 200; --z-dialog: 300; --z-toast: 400;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --accent: #5b9bff; --accent-dark: #86b4ff; --accent-soft: #1c2744;
+  --text: #e6ecfa; --muted: #93a3c7;
+  --border: rgba(120, 160, 255, .18); --track: rgba(120, 160, 255, .12);
+  --shadow: 0 24px 60px -30px rgba(0, 0, 0, .6);
+  --ring: 0 4px 14px -6px rgba(0, 0, 0, .6);
+  --chip-bg: #1e3a6e; --chip-edge: #3b5aa0; --chip-fg: #bcd4ff;
+  --bar-bg: rgba(22, 30, 51, .86);
+  --page-bg: radial-gradient(900px 500px at 8% -10%, #16264a, transparent 60%), #0e1424;
+  --bg: #0e1424; --surface: #161e33; --surface-2: #1a2440;
+  --on-accent: #07152e;
+  --scrim: rgba(3, 8, 20, .62);
+  --accent-glow: rgba(91, 155, 255, .45);
+  --ok: #6fd49a; --danger: #ff7d7d; --warn: #f0c36a;
+  --ok-soft: #123123; --danger-soft: #3a1a1f; --warn-soft: #3a2f12; --warn-fg: #f0d28a;
+  --st-up: #4ade80; --st-down: #ff6b6b; --st-offline: #7d8aa6; --st-unknown: #f2c230; --st-disabled: #4a5675;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --accent: #5b9bff; --accent-dark: #86b4ff; --accent-soft: #1c2744;
+    --text: #e6ecfa; --muted: #93a3c7;
+    --border: rgba(120, 160, 255, .18); --track: rgba(120, 160, 255, .12);
+    --shadow: 0 24px 60px -30px rgba(0, 0, 0, .6);
+    --ring: 0 4px 14px -6px rgba(0, 0, 0, .6);
+    --chip-bg: #1e3a6e; --chip-edge: #3b5aa0; --chip-fg: #bcd4ff;
+    --bar-bg: rgba(22, 30, 51, .86);
+    --page-bg: radial-gradient(900px 500px at 8% -10%, #16264a, transparent 60%), #0e1424;
+    --bg: #0e1424; --surface: #161e33; --surface-2: #1a2440;
+    --on-accent: #07152e;
+    --scrim: rgba(3, 8, 20, .62);
+    --accent-glow: rgba(91, 155, 255, .45);
+    --ok: #6fd49a; --danger: #ff7d7d; --warn: #f0c36a;
+    --ok-soft: #123123; --danger-soft: #3a1a1f; --warn-soft: #3a2f12; --warn-fg: #f0d28a;
+    --st-up: #4ade80; --st-down: #ff6b6b; --st-offline: #7d8aa6; --st-unknown: #f2c230; --st-disabled: #4a5675;
+  }
+}
