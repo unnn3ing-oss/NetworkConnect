@@ -1,0 +1,63 @@
+# electron-builder 設定（D1）。打包指令見 package.json 的 dist:mac／dist:win，或 .github/workflows/。
+# Mac 只做 Apple 晶片（arm64）；Windows 只做 x64。
+appId: io.github.unnn3ing-oss.networkconnect
+productName: NetworkConnect
+copyright: Copyright © 2026 NetworkConnect
+artifactName: NetworkConnect-${version}-${os}-${arch}.${ext}
+
+directories:
+  output: dist
+  buildResources: desktop/icons
+
+# 只打包執行期需要的目錄；node_modules 的 production 相依由 electron-builder 自動加入
+files:
+  - package.json
+  - desktop/**/*
+  - server/**/*
+  - web/**/*
+  - contracts/**/*
+  - "!**/*.md"
+  - "!desktop/icons/icon-1024.png"
+
+asar: true
+npmRebuild: false # 不使用原生模組
+publish: null
+
+mac:
+  target:
+    - target: dmg
+      arch: [arm64]
+  icon: desktop/icons/icon.icns
+  category: public.app-category.utilities
+  # 沒有 Apple Developer 憑證：使用 ad-hoc 簽章（"-"），Apple 晶片才能執行 go2rtc 等原生執行檔。
+  # electron-builder 會把 Resources 內的 Mach-O 執行檔（含 go2rtc）一併簽入。
+  # 之後有憑證時：npm run dist:mac -- -c.mac.identity=<憑證名稱> -c.mac.hardenedRuntime=true
+  identity: "-"
+  hardenedRuntime: false # ad-hoc 簽章與 hardened runtime 的 library validation 不相容
+  gatekeeperAssess: false
+  extendInfo:
+    NSLocalNetworkUsageDescription: 用來偵測家中網路設備的連線狀態與讀取監視器畫面
+  extraResources:
+    - from: build/go2rtc/darwin-arm64
+      to: go2rtc
+      filter: [go2rtc]
+
+dmg:
+  title: NetworkConnect ${version}
+
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  icon: desktop/icons/icon.ico
+  extraResources:
+    - from: build/go2rtc/win32-x64
+      to: go2rtc
+      filter: [go2rtc.exe]
+
+nsis:
+  oneClick: true
+  perMachine: false # 安裝在使用者資料夾，不需要系統管理員權限
+  allowElevation: false
+  deleteAppDataOnUninstall: false # 解除安裝不刪除資料
+  runAfterFinish: true

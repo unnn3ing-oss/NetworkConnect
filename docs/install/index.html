@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NetworkConnect 安裝教學</title>
+  <meta name="description" content="在 Mac（Apple 晶片）或 Windows 安裝 NetworkConnect：下載、放行未簽章 App、允許區域網路與防火牆、用手機掃 QR Code。">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'">
+  <!-- 使用 A1 的 token 與 guide 元件（web/ui）。GitHub Pages 請從儲存庫根目錄發布，才能解析 ../../web/ui/ -->
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="../../web/ui/tokens.css">
+  <link rel="stylesheet" href="../../web/ui/base.css">
+  <link rel="stylesheet" href="../../web/ui/components.css">
+  <link rel="stylesheet" href="../../web/ui/guide.css">
+  <link rel="stylesheet" href="install.css">
+</head>
+<body>
+  <header class="topbar">
+    <span class="brand">NetworkConnect</span>
+    <span class="grow"></span>
+    <a class="btn small" id="releases" href="https://github.com/unnn3ing-oss/NetworkConnect/releases" rel="noopener">下載頁面</a>
+  </header>
+
+  <main class="install">
+    <section class="hero">
+      <p class="eyebrow">安裝教學</p>
+      <h1>跟著圖示，<br>幾分鐘就能看清家裡的網路。</h1>
+      <p class="lead">選你的電腦，跟著圖示一步一步來。未簽章的 App 第一次開啟會被系統擋下，這裡會告訴你怎麼放行。</p>
+    </section>
+
+    <section class="routes" aria-label="選擇你的電腦">
+      <button type="button" class="route card" data-route="mac">
+        <span class="route-art" aria-hidden="true">
+          <svg viewBox="0 0 120 84" xmlns="http://www.w3.org/2000/svg"><rect class="r-body" x="14" y="8" width="92" height="56" rx="8"/><rect class="r-screen" x="20" y="14" width="80" height="44" rx="4"/><path class="r-stand" d="M44 74h32M60 64v10"/><circle class="r-dot" cx="60" cy="36" r="9"/></svg>
+        </span>
+        <span class="route-name">Mac</span>
+        <span class="route-sub">Apple 晶片（M1 以後）</span>
+        <span class="route-meta">5 步・約 5 分鐘</span>
+        <span class="route-badge" hidden>偵測到你的電腦</span>
+      </button>
+      <button type="button" class="route card" data-route="win">
+        <span class="route-art" aria-hidden="true">
+          <svg viewBox="0 0 120 84" xmlns="http://www.w3.org/2000/svg"><rect class="r-body" x="14" y="8" width="92" height="56" rx="8"/><rect class="r-screen" x="20" y="14" width="80" height="44" rx="4"/><path class="r-stand" d="M44 74h32M60 64v10"/><path class="r-win" d="M48 26h11v9H48zM61 26h11v9H61zM48 37h11v9H48zM61 37h11v9H61z"/></svg>
+        </span>
+        <span class="route-name">Windows</span>
+        <span class="route-sub">Windows 10／11（64 位元）</span>
+        <span class="route-meta">4 步・約 3 分鐘</span>
+        <span class="route-badge" hidden>偵測到你的電腦</span>
+      </button>
+    </section>
+
+    <section class="notes card">
+      <h2>開始之前</h2>
+      <ul>
+        <li><strong>電腦要常開。</strong>電腦睡眠時偵測會停止，建議用一台常開、接網路線的桌機或 Mac mini。</li>
+        <li><strong>手機和電腦要在同一個 Wi-Fi。</strong>手機透過電腦的區網網址連線，不需要在路由器開任何 port。</li>
+        <li><strong>不支援 Intel Mac。</strong>目前 Mac 版只有 Apple 晶片。</li>
+      </ul>
+    </section>
+  </main>
+
+  <noscript><p class="noscript">此頁的互動導覽需要 JavaScript。請直接到 <a href="https://github.com/unnn3ing-oss/NetworkConnect/releases">Releases 頁面</a> 下載安裝檔。</p></noscript>
+  <script type="module" src="install.js"></script>
+</body>
+</html>
