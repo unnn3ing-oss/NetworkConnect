@@ -83,6 +83,6 @@ npm run dist:win    # 只能在 Windows 上執行 → dist/*.exe（NSIS，x64，
 
 ## 已知限制
 
-- Electron 鎖在 39.8.10（39.x 的最新版）：實測 `process.versions.node` 為 **22.22.1**，與 `.nvmrc` 同為 Node 22。Electron 40 起內建 Node 24；39 已超出 Electron 官方支援期，`npm audit` 對它有數項通報（視窗彈出沙盒繼承、`<webview>` 等；本 App 禁用 webview、只載入本機頁面並拒絕所有 `window.open`）。升級到 40 以上需同步把 `.nvmrc` 與 `engines.node` 改為 Node 24，並重跑全部測試。
+- Electron 鎖在 44.7.2（官方支援期內的最新主版本）：實測 `process.versions.node` 為 **24.21.0**，與 `.nvmrc`、`engines.node`（>=24）一致。升級 Electron 時請重新實測內建 Node 版本（`ELECTRON_RUN_AS_NODE=1 npx electron -e "console.log(process.versions.node)"`）並同步 `.nvmrc`；`test/unit/desktop/builder-config.test.js` 的對照表也要一起更新。
 - 查詢設備資料（通知需要 `critical` 與名稱）與系統匣狀態圖示使用視窗 session 的 cookie 呼叫 REST API；設了存取密碼但尚未在視窗登入時，通知與圖示警示不會運作。
 - 冒煙測試的「沒有殘留 go2rtc」在 nvr 模組尚未設定任何 NVR 時不會真的啟動 go2rtc，需要 B5 合併後以真實設定補強。

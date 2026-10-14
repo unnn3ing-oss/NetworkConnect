@@ -5,9 +5,10 @@
   "private": true,
   "type": "module",
   "main": "desktop/main.js",
+  "author": "Jean Zhuang",
   "license": "UNLICENSED",
   "engines": {
-    "node": ">=22"
+    "node": ">=24"
   },
   "config": {
     "go2rtcVersion": "1.9.14"
@@ -36,7 +37,7 @@
   },
   "devDependencies": {
     "@playwright/test": "1.64.0",
-    "electron": "39.8.10",
+    "electron": "44.7.2",
     "electron-builder": "26.15.3",
     "jsdom": "29.1.1"
   }

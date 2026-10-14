@@ -51,7 +51,7 @@ test('package.json：main 指向主行程，Electron 與 electron-builder 鎖確
 
 test('Electron 內建的 Node 主要版本與 .nvmrc 相同（版本表來自實際執行 Electron 的 process.versions）', () => {
   const nvmMajor = Number(read('.nvmrc').trim().split('.')[0]);
-  const electronNodeMajor = { '39.8.10': 22 }[pkg.devDependencies.electron];
+  const electronNodeMajor = { '44.7.2': 24 }[pkg.devDependencies.electron];
   assert.ok(electronNodeMajor, `請在此補上 Electron ${pkg.devDependencies.electron} 內建的 Node 主要版本（用 ELECTRON_RUN_AS_NODE=1 electron -e "console.log(process.versions.node)" 查）`);
   assert.equal(electronNodeMajor, nvmMajor);
 });
