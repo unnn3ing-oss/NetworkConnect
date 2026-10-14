@@ -6,42 +6,155 @@
     "StatusItem": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["deviceId", "state", "rttMs", "lastCheckAt", "lastChangeAt", "consecutiveFailures"],
+      "required": [
+        "deviceId",
+        "state",
+        "rttMs",
+        "lastCheckAt",
+        "lastChangeAt",
+        "consecutiveFailures"
+      ],
       "properties": {
-        "deviceId": { "$ref": "common.schema.json#/$defs/DeviceId" },
-        "state": { "$ref": "common.schema.json#/$defs/StatusState" },
-        "rttMs": { "type": ["number", "null"], "minimum": 0, "description": "最近一次成功的往返時間（毫秒）；非 up 為 null" },
-        "lastCheckAt": { "anyOf": [{ "$ref": "common.schema.json#/$defs/Timestamp" }, { "type": "null" }], "description": "最近一次檢查時間；尚未檢查為 null" },
-        "lastChangeAt": { "anyOf": [{ "$ref": "common.schema.json#/$defs/Timestamp" }, { "type": "null" }], "description": "state 最近一次改變的時間" },
-        "consecutiveFailures": { "type": "integer", "minimum": 0, "description": "連續失敗次數；達 3 判定為 down" },
-        "error": { "type": "string", "description": "state=unknown 時的原因（檢查本身出錯）" }
+        "deviceId": {
+          "$ref": "common.schema.json#/$defs/DeviceId"
+        },
+        "state": {
+          "$ref": "common.schema.json#/$defs/StatusState"
+        },
+        "rttMs": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "description": "最近一次成功的往返時間（毫秒）；非 up 為 null"
+        },
+        "lastCheckAt": {
+          "anyOf": [
+            {
+              "$ref": "common.schema.json#/$defs/Timestamp"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "最近一次檢查時間；尚未檢查為 null"
+        },
+        "lastChangeAt": {
+          "anyOf": [
+            {
+              "$ref": "common.schema.json#/$defs/Timestamp"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "state 最近一次改變的時間"
+        },
+        "consecutiveFailures": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "連續失敗次數；達 3 判定為 down"
+        },
+        "error": {
+          "type": "string",
+          "description": "state=unknown 時的原因（檢查本身出錯）"
+        }
       }
     },
-    "StatusList": { "type": "array", "items": { "$ref": "#/$defs/StatusItem" }, "description": "GET /api/status：每台設備一筆" },
+    "StatusList": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/StatusItem"
+      },
+      "description": "GET /api/status：每台設備一筆"
+    },
     "HistoryQuery": {
       "type": "object",
       "additionalProperties": false,
-      "properties": { "hours": { "type": "integer", "minimum": 1, "maximum": 24, "default": 24 } }
+      "properties": {
+        "hours": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 24,
+          "default": 24
+        }
+      }
     },
     "HistoryResponse": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["deviceId", "hours", "samples"],
+      "required": [
+        "deviceId",
+        "hours",
+        "samples"
+      ],
       "properties": {
-        "deviceId": { "$ref": "common.schema.json#/$defs/DeviceId" },
-        "hours": { "type": "integer", "minimum": 1, "maximum": 24 },
-        "samples": { "type": "array", "maxItems": 1440, "items": { "$ref": "status-history.schema.json#/$defs/Sample" }, "description": "由舊到新" }
+        "deviceId": {
+          "$ref": "common.schema.json#/$defs/DeviceId"
+        },
+        "hours": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 24
+        },
+        "samples": {
+          "type": "array",
+          "maxItems": 1440,
+          "items": {
+            "$ref": "status-history.schema.json#/$defs/Sample"
+          },
+          "description": "由舊到新"
+        }
       }
     },
     "MonitorSettings": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["defaultIntervalSec", "concurrency", "timeoutMs", "pausedUntil"],
+      "required": [
+        "defaultIntervalSec",
+        "concurrency",
+        "timeoutMs",
+        "pausedUntil"
+      ],
       "properties": {
-        "defaultIntervalSec": { "type": "integer", "minimum": 15, "maximum": 86400, "default": 60, "description": "新設備的預設偵測間隔" },
-        "concurrency": { "type": "integer", "minimum": 1, "maximum": 64, "default": 16, "description": "整體並發上限" },
-        "timeoutMs": { "type": "integer", "minimum": 200, "maximum": 10000, "default": 1500, "description": "單次偵測逾時（tcp／http；icmp 另依平台）" },
-        "pausedUntil": { "anyOf": [{ "$ref": "common.schema.json#/$defs/Timestamp" }, { "type": "null" }], "default": null, "description": "暫停偵測到何時（桌面 App「暫停偵測 30 分鐘」使用）；null＝未暫停。暫停期間不發出新的 status.changed" }
+        "defaultIntervalSec": {
+          "type": "integer",
+          "minimum": 15,
+          "maximum": 86400,
+          "default": 60,
+          "description": "新設備的預設偵測間隔"
+        },
+        "concurrency": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 64,
+          "default": 16,
+          "description": "整體並發上限"
+        },
+        "timeoutMs": {
+          "type": "integer",
+          "minimum": 200,
+          "maximum": 10000,
+          "default": 1500,
+          "description": "單次偵測逾時（tcp／http；icmp 另依平台）"
+        },
+        "pausedUntil": {
+          "anyOf": [
+            {
+              "$ref": "common.schema.json#/$defs/Timestamp"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "暫停偵測到何時（桌面 App「暫停偵測 30 分鐘」使用）；null＝未暫停。暫停期間不發出新的 status.changed"
+        },
+        "hint": {
+          "type": "string",
+          "description": "選填：偵測環境的提示（例如 macOS 可能未允許區域網路權限）；沒有提示時不回傳此欄位。只出現在回應，PUT 不接受"
+        }
       }
     },
     "MonitorSettingsUpdate": {
@@ -49,10 +162,18 @@
       "additionalProperties": false,
       "description": "PUT /api/monitor/settings：欄位皆選填，只更新有帶的欄位，回傳完整 MonitorSettings",
       "properties": {
-        "defaultIntervalSec": { "$ref": "#/$defs/MonitorSettings/properties/defaultIntervalSec" },
-        "concurrency": { "$ref": "#/$defs/MonitorSettings/properties/concurrency" },
-        "timeoutMs": { "$ref": "#/$defs/MonitorSettings/properties/timeoutMs" },
-        "pausedUntil": { "$ref": "#/$defs/MonitorSettings/properties/pausedUntil" }
+        "defaultIntervalSec": {
+          "$ref": "#/$defs/MonitorSettings/properties/defaultIntervalSec"
+        },
+        "concurrency": {
+          "$ref": "#/$defs/MonitorSettings/properties/concurrency"
+        },
+        "timeoutMs": {
+          "$ref": "#/$defs/MonitorSettings/properties/timeoutMs"
+        },
+        "pausedUntil": {
+          "$ref": "#/$defs/MonitorSettings/properties/pausedUntil"
+        }
       }
     }
   }

@@ -6,49 +6,136 @@
     "Health": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["ok", "version", "uptime"],
+      "required": [
+        "ok",
+        "version",
+        "uptime"
+      ],
       "properties": {
-        "ok": { "const": true },
-        "version": { "type": "string", "description": "package.json 的 version", "examples": ["0.1.0"] },
-        "uptime": { "type": "number", "minimum": 0, "description": "伺服器已執行秒數", "examples": [12.5] }
+        "ok": {
+          "const": true
+        },
+        "version": {
+          "type": "string",
+          "description": "package.json 的 version",
+          "examples": [
+            "0.1.0"
+          ]
+        },
+        "uptime": {
+          "type": "number",
+          "minimum": 0,
+          "description": "伺服器已執行秒數",
+          "examples": [
+            12.5
+          ]
+        }
       }
     },
     "ModuleState": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["name", "state"],
+      "required": [
+        "name",
+        "state"
+      ],
       "properties": {
-        "name": { "type": "string", "examples": ["inventory"] },
-        "state": { "type": "string", "enum": ["ok", "failed", "disabled"] },
-        "error": { "type": "string", "description": "state=failed 時的原因" }
+        "name": {
+          "type": "string",
+          "examples": [
+            "inventory"
+          ]
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "ok",
+            "failed",
+            "disabled"
+          ]
+        },
+        "error": {
+          "type": "string",
+          "description": "state=failed 時的原因"
+        },
+        "note": {
+          "type": "string",
+          "description": "選填：state=ok 但功能受限時的說明（例如 ping 不可用），由模組以 ctx.modules.setNote() 設定"
+        }
       }
     },
-    "ModuleList": { "type": "array", "items": { "$ref": "#/$defs/ModuleState" } },
+    "ModuleList": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ModuleState"
+      }
+    },
     "SettingsModules": {
       "type": "object",
       "additionalProperties": false,
       "description": "各功能模組開關；system 模組永遠啟用，所以沒有 system 這個鍵",
       "properties": {
-        "inventory": { "type": "boolean", "default": true },
-        "io": { "type": "boolean", "default": true },
-        "monitor": { "type": "boolean", "default": true },
-        "floorplan": { "type": "boolean", "default": true },
-        "nvr": { "type": "boolean", "default": true }
+        "inventory": {
+          "type": "boolean",
+          "default": true
+        },
+        "io": {
+          "type": "boolean",
+          "default": true
+        },
+        "monitor": {
+          "type": "boolean",
+          "default": true
+        },
+        "floorplan": {
+          "type": "boolean",
+          "default": true
+        },
+        "nvr": {
+          "type": "boolean",
+          "default": true
+        }
       }
     },
     "Settings": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["lanAccess", "port", "modules", "restartRequired"],
+      "required": [
+        "lanAccess",
+        "port",
+        "modules",
+        "restartRequired"
+      ],
       "description": "GET/PUT /api/system/settings 的回應（內容是 config.json 目前儲存的值）",
       "properties": {
-        "lanAccess": { "type": "boolean", "description": "允許區網（手機）連線；false 時只綁 127.0.0.1" },
-        "port": { "type": "integer", "minimum": 1, "maximum": 65535, "description": "偏好的監聽埠（被佔用時啟動會自動往後找，實際埠號會寫回此值）" },
-        "modules": {
-          "allOf": [{ "$ref": "#/$defs/SettingsModules" }],
-          "required": ["inventory", "io", "monitor", "floorplan", "nvr"]
+        "lanAccess": {
+          "type": "boolean",
+          "description": "允許區網（手機）連線；false 時只綁 127.0.0.1"
         },
-        "restartRequired": { "type": "boolean", "description": "儲存的設定（lanAccess、port、modules）與目前執行中的不同，需要重新啟動才會生效" }
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535,
+          "description": "偏好的監聽埠（被佔用時啟動會自動往後找，實際埠號會寫回此值）"
+        },
+        "modules": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/SettingsModules"
+            }
+          ],
+          "required": [
+            "inventory",
+            "io",
+            "monitor",
+            "floorplan",
+            "nvr"
+          ]
+        },
+        "restartRequired": {
+          "type": "boolean",
+          "description": "儲存的設定（lanAccess、port、modules）與目前執行中的不同，需要重新啟動才會生效"
+        }
       }
     },
     "SettingsUpdate": {
@@ -56,9 +143,17 @@
       "additionalProperties": false,
       "description": "PUT /api/system/settings 的請求本文：欄位皆選填，只更新有帶的欄位（modules 內也只更新有帶的模組）。不可讓所有功能模組同時停用（400）。",
       "properties": {
-        "lanAccess": { "type": "boolean" },
-        "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
-        "modules": { "$ref": "#/$defs/SettingsModules" }
+        "lanAccess": {
+          "type": "boolean"
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "modules": {
+          "$ref": "#/$defs/SettingsModules"
+        }
       }
     }
   }

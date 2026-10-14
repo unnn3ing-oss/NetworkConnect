@@ -37,7 +37,12 @@ export async function loadModules({ app, config, store, ctxBase, importer = defa
   const entries = new Map(names.map((n) => [n, { name: n, state: 'ok' }]));
 
   const list = () =>
-    [...entries.values()].map((e) => (e.state === 'failed' ? { name: e.name, state: e.state, error: e.error } : { name: e.name, state: e.state }));
+    [...entries.values()].map((e) => {
+      const item = { name: e.name, state: e.state };
+      if (e.state === 'failed') item.error = e.error;
+      if (e.note) item.note = e.note;
+      return item;
+    });
 
   const fail = (entry, err, phase) => {
     entry.state = 'failed';
@@ -62,7 +67,11 @@ export async function loadModules({ app, config, store, ctxBase, importer = defa
       continue;
     }
 
-    const ctx = { ...ctxBase, store: store.forModule(name, mod.owns), modules: { list } };
+    const setNote = (text) => {
+      if (text) entry.note = String(text);
+      else delete entry.note;
+    };
+    const ctx = { ...ctxBase, store: store.forModule(name, mod.owns), modules: { list, setNote } };
     entry.mod = mod;
     entry.ctx = ctx;
 

@@ -41,8 +41,8 @@
 - 免認證。回 200 `{ ok: true, version, uptime }`（`api-system#Health`；`uptime` 為秒）。
 
 ### `GET /api/system/modules`
-- 回 200 純陣列 `[{ name, state: 'ok'|'failed'|'disabled', error? }]`（`api-system#ModuleList`），順序：system、inventory、io、monitor、floorplan、nvr。
-- `failed`：`check()`、`register()` 或 `start()` 丟錯（`error` 為訊息）。`disabled`：`config.json` 的 `modules.<name>` 為 `false`。
+- 回 200 純陣列 `[{ name, state: 'ok'|'failed'|'disabled', error?, note? }]`（`api-system#ModuleList`），順序：system、inventory、io、monitor、floorplan、nvr。
+- `failed`：`check()`、`register()` 或 `start()` 丟錯（`error` 為訊息）。`disabled`：`config.json` 的 `modules.<name>` 為 `false`。`note`：`ok` 但功能受限時的說明（模組以 `ctx.modules.setNote()` 設定）。
 
 ### `GET /api/system/settings`、`PUT /api/system/settings`
 - 讀寫 `<dataDir>/config.json` 的 `lanAccess`、`port`、`modules`（schema：`api-system#Settings`、`api-system#SettingsUpdate`；需認證）。
@@ -124,6 +124,7 @@ inventory 在 `start()`／首次載入時，若 `categories` 為空，以 `contr
 | `PUT /api/monitor/settings` | `MonitorSettingsUpdate`（欄位皆選填，只更新有帶的） | 200 完整 `MonitorSettings` | 400 |
 
 > `pausedUntil` 是為桌面 App「暫停偵測 30 分鐘」補充的欄位（列入 A0 回報）。
+> `hint`（選填、只出現在回應）：偵測環境提示，例如 macOS 可能未允許區域網路權限；沒有提示時不回傳。
 
 偵測規則（判定 up／down、間隔、並發、逾時）見規格 §8.1。
 
@@ -201,6 +202,7 @@ SSE，格式與事件清單見 `events.md`。需認證（同其他 `/api/*`）�
 | `ctx.mock` | `true` 表示 `NC_MOCK=1` |
 | `ctx.prober` | 僅 mock 模式提供（`test/helpers/fake-prober.js`）；介面 `probe({method, host, port, path, timeoutMs}) → Promise<{up, rttMs}>`。monitor 在 `ctx.prober` 存在時使用它，否則使用真實 prober |
 | `ctx.modules.list()` | 目前各模組狀態（同 `/api/system/modules`） |
+| `ctx.modules.setNote(text\|null)` | 模組仍為 `ok` 但功能受限時設定說明（例如 ping 不可用），會出現在 `/api/system/modules` 該項的 `note`；傳 `null` 清除 |
 | `ctx.store` | 該模組專屬的 store 視圖：`collection(name)` 回傳 `{ list(filter?), get(id), insert(doc), update(id, patch), remove(id), upsert(doc) }`（皆 async）；對非自己 `owns` 的 collection，寫入方法 reject `NotOwnerError`；只有 io 模組有 `restore(snapshot)` |
 | `ctx.events` | `emit(name, payload)`、`on(name, fn) → off`、`onSseConnect(fn)`（fn(send)：SSE 連線建立時呼叫，monitor 用來送 `status.snapshot`） |
 | `ctx.secrets` | `get(key)`、`has(key)`、`all()` 同步；`set(key, value: string)`、`delete(key)` 回傳 Promise（寫檔完成才 resolve）。鍵：`nvr:<id>`（nvr 模組）、`auth`、`auth:key`（core，其他模組不得使用） |

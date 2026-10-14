@@ -207,3 +207,16 @@ describe('module-loader：停用', () => {
     await store.close();
   });
 });
+
+test('模組可用 ctx.modules.setNote() 在 ok 狀態下附註說明，null 清除（CR：B2）', async () => {
+  const app = Fastify();
+  let saved;
+  const mod = { name: 'monitor', owns: [], async check(ctx) { saved = ctx; ctx.modules.setNote('ping 不可用'); }, async register() {} };
+  const store = { forModule: () => ({}) };
+  const loader = await loadModules({ app, config: { modules: {} }, store, ctxBase: {}, importer: async () => ({ default: mod }), names: ['monitor'] });
+  await app.ready();
+  assert.deepEqual(loader.list(), [{ name: 'monitor', state: 'ok', note: 'ping 不可用' }]);
+  saved.modules.setNote(null);
+  assert.deepEqual(loader.list(), [{ name: 'monitor', state: 'ok' }]);
+  await app.close();
+});

@@ -8,6 +8,9 @@ import { makeTmpDir, cleanupAllTmpDirs, waitFor } from '../../helpers/tmp.js';
 
 const MODULE_IDS = ['dashboard', 'devices', 'topology', 'floorplan', 'cameras', 'status', 'settings'];
 
+// 模組已掛載且不是錯誤卡（各模組實作後不再是 stub，所以不檢查 .nc-stub）
+const mounted = (id) => `.nc-view[data-module="${id}"]:not(:has(.nc-error-card)) > *`;
+
 describe('前端 shell（Chromium）', async () => {
   const browser = await launchBrowser();
   let server;
@@ -48,11 +51,12 @@ describe('前端 shell（Chromium）', async () => {
     await context.close();
   });
 
-  test('每個模組分頁都顯示 stub 卡片（建置中）', { skip: !browser && '找不到 Chromium' }, async () => {
+  test('每個模組分頁都能載入（不出現錯誤卡）', { skip: !browser && '找不到 Chromium' }, async () => {
     const { page, problems, context } = await open();
     for (const id of MODULE_IDS) {
       await page.click(`#nc-nav a[data-module="${id}"]`);
-      await page.waitForSelector(`.nc-view[data-module="${id}"] .nc-stub`);
+      await page.waitForSelector(mounted(id));
+      assert.equal(await page.locator('.nc-error-card').count(), 0, `${id} 不應出現錯誤卡`);
       assert.equal(await page.locator('.nc-view').count(), 1, '同時只會有一個模組容器');
       assert.equal(await page.locator(`#nc-nav a[data-module="${id}"]`).getAttribute('aria-current'), 'page');
     }
@@ -103,7 +107,7 @@ describe('前端 shell（Chromium）', async () => {
     assert.match(await page.locator('.nc-error-card').innerText(), /此功能暫時無法載入[\s\S]*模擬 mount 失敗/);
     // 其他分頁完全不受影響
     await page.click('#nc-nav a[data-module="status"]');
-    await page.waitForSelector('.nc-view[data-module="status"] .nc-stub');
+    await page.waitForSelector(mounted('status'));
     assert.equal(await page.locator('.nc-error-card').count(), 0);
     // 回到壞掉的分頁，錯誤卡仍在；導覽仍可用
     await page.click('#nc-nav a[data-module="devices"]');
@@ -122,7 +126,7 @@ describe('前端 shell（Chromium）', async () => {
     await page.click('#nc-nav a[data-module="topology"]');
     await page.waitForSelector('.nc-error-card');
     await page.click('#nc-nav a[data-module="floorplan"]');
-    await page.waitForSelector('.nc-view[data-module="floorplan"] .nc-stub');
+    await page.waitForSelector(mounted('floorplan'));
     await context.close();
   });
 
@@ -142,7 +146,7 @@ describe('前端 shell（Chromium）', async () => {
       await page.waitForSelector('.nc-error-card');
       assert.match(await page.locator('.nc-error-card').innerText(), /nvr[\s\S]*go2rtc 不存在/);
       await page.click('#nc-nav a[data-module="status"]');
-      await page.waitForSelector('.nc-view[data-module="status"] .nc-stub');
+      await page.waitForSelector(mounted('status'));
       await context.close();
     } finally {
       await broken.stop();
