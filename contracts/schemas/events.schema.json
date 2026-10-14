@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://networkconnect.local/schemas/events.schema.json",
+  "title": "事件 payload",
+  "description": "SSE `event:` 名稱與前端 bus 同名；每個 $defs 名稱是事件名稱把「.」換成「_」。data 欄位一律是下列物件的 JSON。",
+  "$defs": {
+    "inventory_changed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["collection", "op", "id"],
+      "properties": {
+        "collection": { "type": "string", "enum": ["floors", "rooms", "groups", "categories", "devices"] },
+        "op": { "type": "string", "enum": ["create", "update", "delete"] },
+        "id": { "type": "string", "description": "被異動紀錄的 id；整批匯入時為 \"*\"" }
+      }
+    },
+    "status_changed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["deviceId", "from", "to", "rttMs", "at"],
+      "properties": {
+        "deviceId": { "$ref": "common.schema.json#/$defs/DeviceId" },
+        "from": { "$ref": "common.schema.json#/$defs/StatusState" },
+        "to": { "$ref": "common.schema.json#/$defs/StatusState" },
+        "rttMs": { "type": ["number", "null"], "minimum": 0 },
+        "at": { "$ref": "common.schema.json#/$defs/Timestamp" }
+      }
+    },
+    "status_snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["items"],
+      "properties": { "items": { "$ref": "api-monitor.schema.json#/$defs/StatusList" } }
+    },
+    "placement_changed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["deviceId", "floorId"],
+      "properties": {
+        "deviceId": { "$ref": "common.schema.json#/$defs/DeviceId" },
+        "floorId": { "$ref": "common.schema.json#/$defs/FloorId" }
+      }
+    },
+    "plan_changed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["floorId"],
+      "properties": { "floorId": { "$ref": "common.schema.json#/$defs/FloorId" } }
+    },
+    "nvr_changed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id"],
+      "properties": { "id": { "type": "string", "description": "NVR id；整批匯入時為 \"*\"" } }
+    },
+    "device_open": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id"],
+      "description": "前端限定",
+      "properties": { "id": { "$ref": "common.schema.json#/$defs/DeviceId" } }
+    },
+    "filters_changed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["floorId", "roomId", "groupId", "categoryId", "q"],
+      "description": "前端限定；空字串＝未篩選",
+      "properties": {
+        "floorId": { "type": "string" },
+        "roomId": { "type": "string" },
+        "groupId": { "type": "string" },
+        "categoryId": { "type": "string" },
+        "q": { "type": "string" }
+      }
+    }
+  }
+}

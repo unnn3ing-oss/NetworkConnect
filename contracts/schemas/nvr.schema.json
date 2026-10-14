@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://networkconnect.local/schemas/nvr.schema.json",
+  "title": "Nvr（NVR 錄影主機）",
+  "description": "collection `nvrs`，擁有者 nvr。密碼不在此紀錄內：只存在 secrets.json 的 `nvr:<id>`，API 永不回傳（只回 hasPassword）。`$defs/Editable` 是請求可帶的欄位集合。",
+  "allOf": [
+    { "$ref": "#/$defs/Editable" },
+    { "$ref": "#/$defs/Stored" }
+  ],
+  "unevaluatedProperties": false,
+  "$defs": {
+    "Stored": {
+      "type": "object",
+      "description": "儲存紀錄必備欄位（id 與所有 Editable 欄位都必須存在）",
+      "required": ["id", "deviceId", "name", "brand", "host", "port", "username", "channelCount", "streamMain", "streamSub", "urlTemplate", "channels"],
+      "properties": {
+        "id": { "$ref": "common.schema.json#/$defs/NvrId" }
+      }
+    },
+    "Brand": { "type": "string", "enum": ["hikvision", "dahua", "uniview", "reolink", "custom"] },
+    "Channel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ch", "name", "enabled"],
+      "properties": {
+        "ch": { "type": "integer", "minimum": 1, "maximum": 64, "description": "頻道編號（從 1 開始）" },
+        "name": { "type": "string", "maxLength": 100, "default": "", "description": "頻道顯示名稱", "examples": ["前門"] },
+        "deviceId": { "anyOf": [{ "$ref": "common.schema.json#/$defs/DeviceId" }, { "type": "null" }], "default": null, "description": "此頻道對應的攝影機設備（供平面圖跳轉）" },
+        "enabled": { "type": "boolean", "default": true, "description": "是否顯示在監視器分割畫面" }
+      }
+    },
+    "Editable": {
+      "type": "object",
+      "properties": {
+        "deviceId": { "anyOf": [{ "$ref": "common.schema.json#/$defs/DeviceId" }, { "type": "null" }], "default": null, "description": "NVR 本身在設備清單中的設備（類別 cat_nvr）；可為 null" },
+        "name": { "$ref": "common.schema.json#/$defs/Name", "examples": ["家用 NVR"] },
+        "brand": { "$ref": "#/$defs/Brand", "description": "品牌模板 id，見 GET /api/nvr/templates" },
+        "host": { "type": "string", "minLength": 1, "maxLength": 255, "description": "IP 或主機名稱", "examples": ["192.168.1.20"] },
+        "port": { "type": "integer", "minimum": 1, "maximum": 65535, "default": 554, "description": "RTSP 埠；預設取品牌模板的 defaultPort" },
+        "username": { "type": "string", "maxLength": 100, "examples": ["admin"] },
+        "channelCount": { "type": "integer", "minimum": 1, "maximum": 64, "examples": [8] },
+        "streamMain": { "type": "string", "maxLength": 20, "description": "範本中 {s} 代入的主碼流值；預設取品牌模板", "examples": ["1"] },
+        "streamSub": { "type": "string", "maxLength": 20, "description": "範本中 {s} 代入的子碼流值；預設取品牌模板", "examples": ["2"] },
+        "urlTemplate": {
+          "anyOf": [{ "type": "string", "minLength": 1, "maxLength": 500 }, { "type": "null" }],
+          "default": null,
+          "description": "僅 brand=custom 使用的完整 RTSP URL 範本（可用 {u} {p} {host} {port} {ch} {ch:02} {s}）；其他品牌為 null"
+        },
+        "channels": { "type": "array", "maxItems": 64, "items": { "$ref": "#/$defs/Channel" }, "description": "頻道清單；建立時省略則自動產生 1..channelCount、全部啟用" }
+      },
+      "if": { "properties": { "brand": { "const": "custom" } }, "required": ["brand"] },
+      "then": { "required": ["urlTemplate"], "properties": { "urlTemplate": { "type": "string", "minLength": 1 } } }
+    }
+  }
+}

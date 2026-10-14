@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://networkconnect.local/schemas/api-nvr.schema.json",
+  "title": "nvr 模組 API",
+  "$defs": {
+    "Template": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "urlTemplate", "defaultPort", "streamMain", "streamSub", "notes"],
+      "properties": {
+        "id": { "$ref": "nvr.schema.json#/$defs/Brand" },
+        "name": { "type": "string", "minLength": 1, "examples": ["Hikvision 海康"] },
+        "urlTemplate": {
+          "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }],
+          "description": "RTSP URL 範本；佔位符 {u} 帳號、{p} 密碼、{host}、{port}、{ch} 頻道、{ch:02} 兩位數頻道、{s} 碼流值。{u}{p} 代入前必須 encodeURIComponent。custom 為 null（由使用者輸入）"
+        },
+        "defaultPort": { "type": "integer", "minimum": 1, "maximum": 65535 },
+        "streamMain": { "type": "string", "description": "{s} 代入主碼流的值" },
+        "streamSub": { "type": "string", "description": "{s} 代入子碼流的值" },
+        "notes": { "type": "string", "description": "給精靈顯示的提示（繁中）" }
+      }
+    },
+    "TemplateList": { "type": "array", "items": { "$ref": "#/$defs/Template" } },
+    "NvrPublic": {
+      "allOf": [
+        { "$ref": "nvr.schema.json#/$defs/Editable" },
+        { "$ref": "nvr.schema.json#/$defs/Stored" },
+        { "type": "object", "required": ["hasPassword"], "properties": { "hasPassword": { "type": "boolean", "description": "secrets.json 是否有此 NVR 的密碼（密碼本身永不回傳）" } } }
+      ],
+      "unevaluatedProperties": false
+    },
+    "NvrPublicList": { "type": "array", "items": { "$ref": "#/$defs/NvrPublic" } },
+    "NvrCreate": {
+      "allOf": [
+        { "$ref": "nvr.schema.json#/$defs/Editable" },
+        { "type": "object", "properties": { "password": { "type": "string", "minLength": 1, "maxLength": 200, "description": "寫入專用；存入 secrets.json 的 nvr:<id>" } } }
+      ],
+      "required": ["name", "brand", "host", "username", "password", "channelCount"],
+      "unevaluatedProperties": false
+    },
+    "NvrPatch": {
+      "allOf": [
+        { "$ref": "nvr.schema.json#/$defs/Editable" },
+        { "type": "object", "properties": { "password": { "anyOf": [{ "type": "string", "minLength": 1, "maxLength": 200 }, { "type": "null" }], "description": "字串＝更新密碼；null＝刪除密碼；省略＝不變" } } }
+      ],
+      "unevaluatedProperties": false
+    },
+    "NvrTestRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": { "channel": { "type": "integer", "minimum": 1, "maximum": 64, "default": 1, "description": "要測試的頻道（子碼流）" } }
+    },
+    "NvrTestResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ok"],
+      "properties": {
+        "ok": { "type": "boolean" },
+        "codec": { "type": "string", "description": "偵測到的影像編碼：h264（avc1）、h265（hvc1／hev1）或其他原始字串", "examples": ["h264"] },
+        "warning": { "type": "string", "description": "例：偵測到 H.265，請把 NVR 子碼流改為 H.264" },
+        "error": { "type": "string", "description": "ok=false 時的原因（認證失敗、逾時 8 秒等）" }
+      }
+    },
+    "NvrStatus": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["running", "version"],
+      "properties": {
+        "running": { "type": "boolean", "description": "go2rtc 是否可連線" },
+        "version": { "type": ["string", "null"], "description": "go2rtc 回報的版本；未連線為 null" },
+        "mode": { "type": "string", "enum": ["managed", "external", "none"], "description": "managed＝由本程式啟動；external＝連 go2rtcUrl；none＝未設定" }
+      }
+    }
+  }
+}

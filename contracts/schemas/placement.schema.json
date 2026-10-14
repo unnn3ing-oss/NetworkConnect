@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://networkconnect.local/schemas/placement.schema.json",
+  "title": "Placement（設備在平面圖上的位置）",
+  "description": "collection `placements`，擁有者 floorplan，主鍵為 deviceId（一台設備最多一個落點）。x、y 為相對圖片寬高的 0–1 比例。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["deviceId", "floorId", "x", "y"],
+  "properties": {
+    "deviceId": { "$ref": "common.schema.json#/$defs/DeviceId" },
+    "floorId": { "$ref": "common.schema.json#/$defs/FloorId" },
+    "x": { "$ref": "common.schema.json#/$defs/Ratio", "examples": [0.42] },
+    "y": { "$ref": "common.schema.json#/$defs/Ratio", "examples": [0.31] }
+  }
+}

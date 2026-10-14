@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://networkconnect.local/schemas/category.schema.json",
+  "title": "Category（設備類別）",
+  "description": "collection `categories`，擁有者 inventory。內建類別 builtin:true 不可刪除（種子資料見 contracts/seed/categories.json，id 固定）。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name", "icon", "tier", "builtin", "defaultMonitor"],
+  "properties": {
+    "id": { "$ref": "common.schema.json#/$defs/CategoryId" },
+    "name": { "$ref": "common.schema.json#/$defs/Name", "examples": ["路由器"] },
+    "icon": { "type": "string", "minLength": 1, "maxLength": 40, "description": "圖示名稱（對應 web/ui 的 icons.js）", "examples": ["router"] },
+    "tier": { "$ref": "common.schema.json#/$defs/Tier" },
+    "builtin": { "type": "boolean", "description": "內建類別不可刪除", "default": false },
+    "defaultMonitor": { "$ref": "common.schema.json#/$defs/MonitorMethod", "description": "新增此類別設備時預設的偵測方式", "default": "icmp" }
+  }
+}

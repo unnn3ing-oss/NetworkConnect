@@ -1,0 +1,149 @@
+/* shell 版面：頂欄、主導覽、篩選列、模組容器、錯誤卡。
+   顏色優先使用 web/ui/tokens.css（A1）的變數；沒有時用下面的後備值，所以 ui 尚未載入也能正常顯示。
+   不使用行內樣式（CSP style-src 'self'）。 */
+
+:root {
+  --nc-bg: var(--bg, #f5f7fa);
+  --nc-surface: var(--surface, #ffffff);
+  --nc-text: var(--text, #1f2937);
+  --nc-muted: var(--muted, #6b7280);
+  --nc-border: var(--border, #e2e8f0);
+  --nc-accent: var(--accent, #2563eb);
+  --nc-danger: var(--danger, #dc2626);
+  --nc-ok: var(--ok, #16a34a);
+  --nc-warn: var(--warn, #d97706);
+  --nc-radius: 12px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --nc-bg: var(--bg, #0f1419);
+    --nc-surface: var(--surface, #182029);
+    --nc-text: var(--text, #e5e7eb);
+    --nc-muted: var(--muted, #9ca3af);
+    --nc-border: var(--border, #2b3541);
+    --nc-accent: var(--accent, #60a5fa);
+    --nc-danger: var(--danger, #f87171);
+  }
+}
+
+[hidden] { display: none !important; }
+
+html, body { margin: 0; min-height: 100%; }
+
+body {
+  background: var(--nc-bg);
+  color: var(--nc-text);
+  font-family: system-ui, -apple-system, "Segoe UI", "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.nc-sr {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+.nc-skip {
+  position: absolute; left: 8px; top: -48px; z-index: 100;
+  padding: 8px 12px; border-radius: 8px; background: var(--nc-accent); color: #fff; text-decoration: none;
+}
+.nc-skip:focus { top: 8px; }
+
+/* ---- 頂欄 ---- */
+.nc-topbar {
+  position: sticky; top: 0; z-index: 20;
+  display: flex; align-items: center; gap: 16px;
+  padding: 8px 16px;
+  background: color-mix(in srgb, var(--nc-surface) 85%, transparent);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--nc-border);
+}
+.nc-brand { display: flex; align-items: center; gap: 8px; font-weight: 700; white-space: nowrap; }
+.nc-logo { display: block; }
+
+.nc-nav {
+  display: flex; gap: 4px; flex: 1; min-width: 0;
+  overflow-x: auto; scrollbar-width: none;
+}
+.nc-nav::-webkit-scrollbar { display: none; }
+.nc-nav-link {
+  flex: none; padding: 6px 14px; border-radius: 999px;
+  color: var(--nc-muted); text-decoration: none; white-space: nowrap;
+  transition: background-color .15s, color .15s;
+}
+.nc-nav-link:hover { background: color-mix(in srgb, var(--nc-accent) 10%, transparent); color: var(--nc-text); }
+.nc-nav-link[aria-current="page"] { background: var(--nc-accent); color: #fff; }
+.nc-nav-link.is-failed::after { content: "!"; margin-left: 6px; color: var(--nc-danger); font-weight: 700; }
+.nc-nav-link[aria-current="page"].is-failed::after { color: #fff; }
+.nc-nav-link:focus-visible, .nc-btn:focus-visible { outline: 2px solid var(--nc-accent); outline-offset: 2px; }
+
+.nc-conn { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--nc-muted); }
+.nc-conn[data-state="connected"] { background: var(--nc-ok); }
+.nc-conn[data-state="disconnected"] { background: var(--nc-warn); }
+
+/* ---- 篩選列 ---- */
+.nc-filterbar { border-bottom: 1px solid var(--nc-border); background: var(--nc-surface); }
+.nc-filterbar-inner { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 16px; }
+.nc-select, .nc-search, .nc-input {
+  box-sizing: border-box; height: 34px; padding: 0 12px; border-radius: 999px;
+  border: 1px solid var(--nc-border); background: var(--nc-bg); color: var(--nc-text); font: inherit;
+}
+.nc-select { max-width: 160px; }
+.nc-select.is-active { border-color: var(--nc-accent); color: var(--nc-accent); }
+.nc-search { flex: 1 1 180px; min-width: 140px; }
+.nc-select:focus-visible, .nc-search:focus-visible, .nc-input:focus-visible { outline: 2px solid var(--nc-accent); outline-offset: 1px; }
+
+.nc-btn {
+  height: 34px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--nc-border);
+  background: var(--nc-surface); color: var(--nc-text); font: inherit; cursor: pointer;
+}
+.nc-btn:hover { border-color: var(--nc-accent); }
+.nc-btn.primary { background: var(--nc-accent); border-color: var(--nc-accent); color: #fff; }
+.nc-btn:disabled { opacity: .6; cursor: default; }
+
+/* ---- 主要內容 ---- */
+.nc-main { padding: 16px; max-width: 1400px; margin: 0 auto; outline: none; }
+.nc-loading { color: var(--nc-muted); }
+.nc-view { min-height: 40vh; }
+
+.nc-card {
+  box-sizing: border-box; padding: 20px 24px; border-radius: var(--nc-radius);
+  background: var(--nc-surface); border: 1px solid var(--nc-border);
+}
+.nc-card-title { margin: 0 0 8px; font-size: 18px; }
+.nc-card-text, .nc-card-reason { margin: 4px 0; }
+.nc-card-reason { color: var(--nc-muted); }
+.nc-error-card { border-color: color-mix(in srgb, var(--nc-danger) 50%, var(--nc-border)); }
+.nc-error-card .nc-card-title { color: var(--nc-danger); }
+.nc-card-details { margin: 12px 0; font-size: 13px; color: var(--nc-muted); }
+.nc-card-details pre { overflow: auto; max-height: 240px; padding: 8px; border-radius: 8px; background: var(--nc-bg); white-space: pre-wrap; word-break: break-word; }
+
+/* 建置中卡片（前端模組 stub） */
+.nc-stub { text-align: center; padding: 48px 24px; }
+.nc-stub .nc-stub-badge {
+  display: inline-block; margin-top: 8px; padding: 2px 12px; border-radius: 999px;
+  background: color-mix(in srgb, var(--nc-warn) 18%, transparent); color: var(--nc-warn); font-size: 13px;
+}
+
+/* ---- 登入 ---- */
+.nc-overlay { position: fixed; inset: 0; z-index: 1000; }
+.nc-login-backdrop { display: grid; place-items: center; width: 100%; height: 100%; background: var(--nc-bg); }
+.nc-login { display: flex; flex-direction: column; gap: 12px; width: min(360px, calc(100vw - 32px)); }
+.nc-login-error { min-height: 1.5em; margin: 0; color: var(--nc-danger); font-size: 13px; }
+
+.nc-noscript { padding: 16px; }
+
+@media (max-width: 820px) {
+  .nc-topbar { gap: 8px; padding: 8px 12px; flex-wrap: wrap; }
+  .nc-brand-name { display: none; }
+  .nc-nav { order: 3; flex-basis: 100%; }
+  .nc-conn { margin-left: auto; }
+  .nc-filterbar-inner { padding: 8px 12px; }
+  .nc-select { max-width: none; flex: 1 1 120px; }
+  .nc-main { padding: 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}

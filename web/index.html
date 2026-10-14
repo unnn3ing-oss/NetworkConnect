@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>NetworkConnect</title>
+  <link rel="icon" href="/core/icon.svg" type="image/svg+xml">
+  <!-- web/ui 由 A1 提供；檔案尚未存在時伺服器回傳空樣式表，shell 仍可正常載入 -->
+  <link rel="stylesheet" href="/ui/tokens.css">
+  <link rel="stylesheet" href="/ui/base.css">
+  <link rel="stylesheet" href="/ui/guide.css">
+  <link rel="stylesheet" href="/ui/wizard.css">
+  <link rel="stylesheet" href="/core/shell.css">
+</head>
+<body>
+  <a class="nc-skip" href="#nc-main">跳到主要內容</a>
+
+  <header class="topbar nc-topbar">
+    <div class="nc-brand">
+      <img class="nc-logo" src="/core/icon.svg" alt="" width="24" height="24">
+      <span class="nc-brand-name">NetworkConnect</span>
+    </div>
+    <nav id="nc-nav" class="nc-nav" aria-label="主導覽"></nav>
+    <span id="nc-conn" class="nc-conn" data-state="connecting" role="status" title="即時連線中…"></span>
+  </header>
+
+  <div id="nc-filterbar" class="nc-filterbar" role="search" aria-label="全站篩選" hidden></div>
+
+  <main id="nc-main" class="nc-main" tabindex="-1">
+    <p class="nc-loading">載入中…</p>
+  </main>
+
+  <div id="nc-overlay" class="nc-overlay" hidden></div>
+
+  <noscript><p class="nc-noscript">NetworkConnect 需要啟用 JavaScript。</p></noscript>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

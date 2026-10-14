@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://networkconnect.local/schemas/plan.schema.json",
+  "title": "Plan（樓層平面圖）",
+  "description": "collection `plans`，擁有者 floorplan，主鍵為 floorId（每層樓最多一張）。圖檔實體存放在 <dataDir>/plans/<file>。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["floorId", "file", "mime", "width", "height", "updatedAt"],
+  "properties": {
+    "floorId": { "$ref": "common.schema.json#/$defs/FloorId" },
+    "file": { "type": "string", "pattern": "^[A-Za-z0-9_.-]{1,80}$", "description": "圖檔名稱（不含路徑），位於 <dataDir>/plans/", "examples": ["flr_1.png"] },
+    "mime": { "type": "string", "enum": ["image/png", "image/jpeg", "image/webp", "image/svg+xml"] },
+    "width": { "type": "integer", "minimum": 1, "description": "像素寬（SVG 取 viewBox 寬）", "examples": [800] },
+    "height": { "type": "integer", "minimum": 1, "description": "像素高（SVG 取 viewBox 高）", "examples": [500] },
+    "updatedAt": { "$ref": "common.schema.json#/$defs/Timestamp" }
+  }
+}

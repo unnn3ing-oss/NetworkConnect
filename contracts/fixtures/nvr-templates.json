@@ -1,0 +1,47 @@
+[
+  {
+    "id": "hikvision",
+    "name": "Hikvision 海康",
+    "urlTemplate": "rtsp://{u}:{p}@{host}:{port}/Streaming/Channels/{ch}0{s}",
+    "defaultPort": 554,
+    "streamMain": "1",
+    "streamSub": "2",
+    "notes": "頻道 1 的主碼流是 101、子碼流是 102。請在 NVR 把子碼流編碼設為 H.264。"
+  },
+  {
+    "id": "dahua",
+    "name": "Dahua 大華（含 Imou、Amcrest）",
+    "urlTemplate": "rtsp://{u}:{p}@{host}:{port}/cam/realmonitor?channel={ch}&subtype={s}",
+    "defaultPort": 554,
+    "streamMain": "0",
+    "streamSub": "1",
+    "notes": "subtype 0 為主碼流、1 為子碼流。請在 NVR 把子碼流編碼設為 H.264。"
+  },
+  {
+    "id": "uniview",
+    "name": "Uniview 宇視",
+    "urlTemplate": "rtsp://{u}:{p}@{host}:{port}/unicast/c{ch}/s{s}/live",
+    "defaultPort": 554,
+    "streamMain": "0",
+    "streamSub": "1",
+    "notes": "s0 為主碼流、s1 為子碼流。請在 NVR 把子碼流編碼設為 H.264。"
+  },
+  {
+    "id": "reolink",
+    "name": "Reolink",
+    "urlTemplate": "rtsp://{u}:{p}@{host}:{port}/h264Preview_{ch:02}_{s}",
+    "defaultPort": 554,
+    "streamMain": "main",
+    "streamSub": "sub",
+    "notes": "頻道以兩位數表示（01、02…）。需在裝置網頁開啟 RTSP 功能。"
+  },
+  {
+    "id": "custom",
+    "name": "自訂",
+    "urlTemplate": null,
+    "defaultPort": 554,
+    "streamMain": "0",
+    "streamSub": "1",
+    "notes": "自行輸入完整 RTSP URL，可使用 {u} {p} {host} {port} {ch} {ch:02} {s} 佔位符。"
+  }
+]

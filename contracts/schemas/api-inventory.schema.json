@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://networkconnect.local/schemas/api-inventory.schema.json",
+  "title": "inventory 模組 API 請求／回應",
+  "description": "回應：POST 回 201＋完整紀錄；GET／PATCH 回 200＋完整紀錄（單筆 schema 即 collection schema）；DELETE 回 204 無內容；列表回傳純陣列。PATCH 是部分更新（淺層合併，uplink／monitor 以整個物件取代），未知欄位一律 400 VALIDATION。",
+  "$defs": {
+    "FloorCreate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "name": { "$ref": "common.schema.json#/$defs/Name" },
+        "order": { "type": "integer", "default": 0, "description": "省略時排在最後（現有最大值＋1）" }
+      }
+    },
+    "FloorPatch": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": { "$ref": "common.schema.json#/$defs/Name" },
+        "order": { "type": "integer" }
+      }
+    },
+    "RoomCreate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["floorId", "name"],
+      "properties": {
+        "floorId": { "$ref": "common.schema.json#/$defs/FloorId" },
+        "name": { "$ref": "common.schema.json#/$defs/Name" },
+        "order": { "type": "integer", "default": 0 }
+      }
+    },
+    "RoomPatch": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "floorId": { "$ref": "common.schema.json#/$defs/FloorId", "description": "改樓層時，該房間內設備的 floorId 會一併改成新樓層" },
+        "name": { "$ref": "common.schema.json#/$defs/Name" },
+        "order": { "type": "integer" }
+      }
+    },
+    "GroupCreate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "name": { "$ref": "common.schema.json#/$defs/Name" },
+        "color": { "$ref": "group.schema.json#/properties/color" }
+      }
+    },
+    "GroupPatch": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": { "$ref": "common.schema.json#/$defs/Name" },
+        "color": { "$ref": "group.schema.json#/properties/color" }
+      }
+    },
+    "CategoryCreate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "tier"],
+      "properties": {
+        "name": { "$ref": "common.schema.json#/$defs/Name" },
+        "icon": { "type": "string", "minLength": 1, "maxLength": 40, "default": "other" },
+        "tier": { "$ref": "common.schema.json#/$defs/Tier" },
+        "defaultMonitor": { "$ref": "common.schema.json#/$defs/MonitorMethod", "default": "icmp" }
+      }
+    },
+    "CategoryPatch": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "內建類別（builtin:true）只允許修改 defaultMonitor；其他欄位回 409 CONFLICT",
+      "properties": {
+        "name": { "$ref": "common.schema.json#/$defs/Name" },
+        "icon": { "type": "string", "minLength": 1, "maxLength": 40 },
+        "tier": { "$ref": "common.schema.json#/$defs/Tier" },
+        "defaultMonitor": { "$ref": "common.schema.json#/$defs/MonitorMethod" }
+      }
+    },
+    "DeviceCreate": {
+      "allOf": [{ "$ref": "device.schema.json#/$defs/Editable" }],
+      "required": ["name", "categoryId"],
+      "unevaluatedProperties": false
+    },
+    "DevicePatch": {
+      "allOf": [{ "$ref": "device.schema.json#/$defs/Editable" }],
+      "unevaluatedProperties": false
+    },
+    "DeviceQuery": {
+      "type": "object",
+      "description": "GET /api/devices 的 query string；多個條件為 AND；q 對 code、name、ip、mac、hostname、vendor、model、notes 做不分大小寫的子字串比對",
+      "additionalProperties": false,
+      "properties": {
+        "floorId": { "$ref": "common.schema.json#/$defs/FloorId" },
+        "roomId": { "$ref": "common.schema.json#/$defs/RoomId" },
+        "groupId": { "$ref": "common.schema.json#/$defs/GroupId" },
+        "categoryId": { "$ref": "common.schema.json#/$defs/CategoryId" },
+        "q": { "type": "string", "maxLength": 100 }
+      }
+    },
+    "FloorList": { "type": "array", "items": { "$ref": "floor.schema.json" } },
+    "RoomList": { "type": "array", "items": { "$ref": "room.schema.json" } },
+    "GroupList": { "type": "array", "items": { "$ref": "group.schema.json" } },
+    "CategoryList": { "type": "array", "items": { "$ref": "category.schema.json" } },
+    "DeviceList": { "type": "array", "items": { "$ref": "device.schema.json" } }
+  }
+}

@@ -1,0 +1,243 @@
+[
+  {
+    "deviceId": "dev_modem",
+    "state": "up",
+    "rttMs": 1,
+    "lastCheckAt": "2026-10-14T08:30:00.000Z",
+    "lastChangeAt": "2026-10-01T08:00:00.000Z",
+    "consecutiveFailures": 0
+  },
+  {
+    "deviceId": "dev_router",
+    "state": "up",
+    "rttMs": 3.3,
+    "lastCheckAt": "2026-10-14T08:30:00.000Z",
+    "lastChangeAt": "2026-10-01T08:00:00.000Z",
+    "consecutiveFailures": 0
+  },
+  {
+    "deviceId": "dev_swcore",
+    "state": "up",
+    "rttMs": 5.6,
+    "lastCheckAt": "2026-10-14T08:30:00.000Z",
+    "lastChangeAt": "2026-10-01T08:00:00.000Z",
+    "consecutiveFailures": 0
+  },
+  {
+    "deviceId": "dev_poesw",
+    "state": "up",
+    "rttMs": 7.9,
+    "lastCheckAt": "2026-10-14T08:30:00.000Z",
+    "lastChangeAt": "2026-10-01T08:00:00.000Z",
+    "consecutiveFailures": 0
+  },
+  {
+    "deviceId": "dev_mesh1",
+    "state": "up",
+    "rttMs": 10.2,
+    "lastCheckAt": "2026-10-14T08:30:00.000Z",
+    "lastChangeAt": "2026-10-01T08:00:00.000Z",
+    "consecutiveFailures": 0
+  },
+  {
+    "deviceId": "dev_mesh2",
+    "state": "up",
+    "rttMs": 12.5,
+    "lastCheckAt": "2026-10-14T08:30:00.000Z",
+    "lastChangeAt": "2026-10-01T08:00:00.000Z",
+    "consecutiveFailures": 0
+  },
+  {
+    "deviceId": "dev_mesh3",
+    "state": "up",
+    "rttMs": 14.8,
+    "lastCheckAt": "2026-10-14T08:30:00.000Z",
+    "lastChangeAt": "2026-10-01T08:00:00.000Z",
+    "consecutiveFailures": 0
+  },
+  {
+    "deviceId": "dev_ap2",
+    "state": "up",
+    "rttMs": 1,
+    "lastCheckAt": "2026-10-14T08:30:00.000Z",
+    "lastChangeAt": "2026-10-01T08:00:00.000Z",
+    "consecutiveFailures": 0
+  },
+  {
+    "deviceId": "dev_nas",
+    "state": "up",
+    "rttMs": 3.3,
+    "lastCheckAt": "2026-10-14T08:30:00.000Z",
+    "lastChangeAt": "2026-10-01T08:00:00.000Z",
+    "consecutiveFailures": 0
+  },
+  {
+    "deviceId": "dev_nvr",
+    "state": "up",
+    "rttMs": 5.6,
+    "lastCheckAt": "2026-10-14T08:30:00.000Z",
+    "lastChangeAt": "2026-10-01T08:00:00.000Z",
+    "consecutiveFailures": 0
+  },
+  {
+    "deviceId": "dev_cam1",
+    "state": "up",
+    "rttMs": 7.9,
+    "lastCheckAt": "2026-10-14T08:30:00.000Z",
+    "lastChangeAt": "2026-10-01T08:00:00.000Z",
+    "consecutiveFailures": 0
+  },
+  {
+    "deviceId": "dev_cam2",
+    "state": "up",
+    "rttMs": 10.2,
+    "lastCheckAt": "2026-10-14T08:30:00.000Z",
+    "lastChangeAt": "2026-10-01T08:00:00.000Z",
+    "consecutiveFailures": 0
+  },
+  {
+    "deviceId": "dev_cam3",
+    "state": "up",
+    "rttMs": 12.5,
+    "lastCheckAt": "2026-10-14T08:30:00.000Z",
+    "lastChangeAt": "2026-10-01T08:00:00.000Z",
+    "consecutiveFailures": 0
+  },
+  {
+    "deviceId": "dev_cam4",
+    "state": "up",
+    "rttMs": 14.8,
+    "lastCheckAt": "2026-10-14T08:30:00.000Z",
+    "lastChangeAt": "2026-10-01T08:00:00.000Z",
+    "consecutiveFailures": 0
+  },
+  {
+    "deviceId": "dev_cam5",
+    "state": "up",
+    "rttMs": 1,
+    "lastCheckAt": "2026-10-14T08:30:00.000Z",
+    "lastChangeAt": "2026-10-01T08:00:00.000Z",
+    "consecutiveFailures": 0
+  },
+  {
+    "deviceId": "dev_cam6",
+    "state": "down",
+    "rttMs": null,
+    "lastCheckAt": "2026-10-14T08:30:00.000Z",
+    "lastChangeAt": "2026-10-14T08:27:00.000Z",
+    "consecutiveFailures": 4
+  },
+  {
+    "deviceId": "dev_cam7",
+    "state": "up",
+    "rttMs": 5.6,
+    "lastCheckAt": "2026-10-14T08:30:00.000Z",
+    "lastChangeAt": "2026-10-01T08:00:00.000Z",
+    "consecutiveFailures": 0
+  },
+  {
+    "deviceId": "dev_cam8",
+    "state": "up",
+    "rttMs": 7.9,
+    "lastCheckAt": "2026-10-14T08:30:00.000Z",
+    "lastChangeAt": "2026-10-01T08:00:00.000Z",
+    "consecutiveFailures": 0
+  },
+  {
+    "deviceId": "dev_tv1",
+    "state": "up",
+    "rttMs": 10.2,
+    "lastCheckAt": "2026-10-14T08:30:00.000Z",
+    "lastChangeAt": "2026-10-01T08:00:00.000Z",
+    "consecutiveFailures": 0
+  },
+  {
+    "deviceId": "dev_pc1",
+    "state": "up",
+    "rttMs": 12.5,
+    "lastCheckAt": "2026-10-14T08:30:00.000Z",
+    "lastChangeAt": "2026-10-01T08:00:00.000Z",
+    "consecutiveFailures": 0
+  },
+  {
+    "deviceId": "dev_printer",
+    "state": "down",
+    "rttMs": null,
+    "lastCheckAt": "2026-10-14T08:30:00.000Z",
+    "lastChangeAt": "2026-10-14T08:27:00.000Z",
+    "consecutiveFailures": 4
+  },
+  {
+    "deviceId": "dev_phone1",
+    "state": "disabled",
+    "rttMs": null,
+    "lastCheckAt": null,
+    "lastChangeAt": null,
+    "consecutiveFailures": 0
+  },
+  {
+    "deviceId": "dev_phone2",
+    "state": "disabled",
+    "rttMs": null,
+    "lastCheckAt": null,
+    "lastChangeAt": null,
+    "consecutiveFailures": 0
+  },
+  {
+    "deviceId": "dev_tablet",
+    "state": "disabled",
+    "rttMs": null,
+    "lastCheckAt": null,
+    "lastChangeAt": null,
+    "consecutiveFailures": 0
+  },
+  {
+    "deviceId": "dev_speaker",
+    "state": "up",
+    "rttMs": 7.9,
+    "lastCheckAt": "2026-10-14T08:30:00.000Z",
+    "lastChangeAt": "2026-10-01T08:00:00.000Z",
+    "consecutiveFailures": 0
+  },
+  {
+    "deviceId": "dev_vacuum",
+    "state": "up",
+    "rttMs": 10.2,
+    "lastCheckAt": "2026-10-14T08:30:00.000Z",
+    "lastChangeAt": "2026-10-01T08:00:00.000Z",
+    "consecutiveFailures": 0
+  },
+  {
+    "deviceId": "dev_plug",
+    "state": "unknown",
+    "rttMs": null,
+    "lastCheckAt": null,
+    "lastChangeAt": null,
+    "consecutiveFailures": 0
+  },
+  {
+    "deviceId": "dev_console",
+    "state": "unknown",
+    "rttMs": null,
+    "lastCheckAt": "2026-10-14T08:30:00.000Z",
+    "lastChangeAt": "2026-10-14T08:30:00.000Z",
+    "consecutiveFailures": 0,
+    "error": "偵測時發生錯誤（ping 指令無法執行）"
+  },
+  {
+    "deviceId": "dev_stb",
+    "state": "up",
+    "rttMs": 1,
+    "lastCheckAt": "2026-10-14T08:30:00.000Z",
+    "lastChangeAt": "2026-10-01T08:00:00.000Z",
+    "consecutiveFailures": 0
+  },
+  {
+    "deviceId": "dev_laptop",
+    "state": "up",
+    "rttMs": 3.3,
+    "lastCheckAt": "2026-10-14T08:30:00.000Z",
+    "lastChangeAt": "2026-10-01T08:00:00.000Z",
+    "consecutiveFailures": 0
+  }
+]

@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://networkconnect.local/schemas/group.schema.json",
+  "title": "Group（組別）",
+  "description": "collection `groups`，擁有者 inventory。組別與設備是多對多（device.groupIds）。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name", "color"],
+  "properties": {
+    "id": { "$ref": "common.schema.json#/$defs/GroupId" },
+    "name": { "$ref": "common.schema.json#/$defs/Name", "examples": ["家用"] },
+    "color": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$", "description": "chip 顏色（#rrggbb）", "default": "#64748b", "examples": ["#3b82f6"] }
+  }
+}

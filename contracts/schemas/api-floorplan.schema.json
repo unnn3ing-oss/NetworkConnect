@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://networkconnect.local/schemas/api-floorplan.schema.json",
+  "title": "floorplan 模組 API",
+  "$defs": {
+    "PlanList": { "type": "array", "items": { "$ref": "plan.schema.json" } },
+    "PlacementList": { "type": "array", "items": { "$ref": "placement.schema.json" } },
+    "PlacementPut": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["floorId", "x", "y"],
+      "description": "PUT /api/placements/:deviceId 的請求本文（deviceId 取自路徑）；不存在則建立，存在則取代。",
+      "properties": {
+        "floorId": { "$ref": "common.schema.json#/$defs/FloorId" },
+        "x": { "$ref": "common.schema.json#/$defs/Ratio" },
+        "y": { "$ref": "common.schema.json#/$defs/Ratio" }
+      }
+    },
+    "PlacementQuery": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": { "floorId": { "$ref": "common.schema.json#/$defs/FloorId" } }
+    }
+  }
+}

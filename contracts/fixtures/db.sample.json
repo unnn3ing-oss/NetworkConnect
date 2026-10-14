@@ -1,0 +1,1417 @@
+{
+  "floors": [
+    {
+      "id": "flr_1",
+      "name": "1F",
+      "order": 1,
+      "createdAt": "2026-10-01T08:00:00.000Z",
+      "updatedAt": "2026-10-01T08:00:00.000Z"
+    },
+    {
+      "id": "flr_2",
+      "name": "2F",
+      "order": 2,
+      "createdAt": "2026-10-01T08:00:00.000Z",
+      "updatedAt": "2026-10-01T08:00:00.000Z"
+    },
+    {
+      "id": "flr_3",
+      "name": "3F",
+      "order": 3,
+      "createdAt": "2026-10-01T08:00:00.000Z",
+      "updatedAt": "2026-10-01T08:00:00.000Z"
+    }
+  ],
+  "rooms": [
+    {
+      "id": "room_living",
+      "floorId": "flr_1",
+      "name": "客廳",
+      "order": 1
+    },
+    {
+      "id": "room_utility",
+      "floorId": "flr_1",
+      "name": "弱電箱",
+      "order": 2
+    },
+    {
+      "id": "room_kitchen",
+      "floorId": "flr_1",
+      "name": "廚房",
+      "order": 3
+    },
+    {
+      "id": "room_master",
+      "floorId": "flr_2",
+      "name": "主臥",
+      "order": 1
+    },
+    {
+      "id": "room_kids",
+      "floorId": "flr_2",
+      "name": "小孩房",
+      "order": 2
+    },
+    {
+      "id": "room_study",
+      "floorId": "flr_2",
+      "name": "書房",
+      "order": 3
+    },
+    {
+      "id": "room_game",
+      "floorId": "flr_3",
+      "name": "遊戲室",
+      "order": 1
+    },
+    {
+      "id": "room_guest",
+      "floorId": "flr_3",
+      "name": "客房",
+      "order": 2
+    },
+    {
+      "id": "room_balcony",
+      "floorId": "flr_3",
+      "name": "陽台",
+      "order": 3
+    }
+  ],
+  "groups": [
+    {
+      "id": "grp_family",
+      "name": "家用",
+      "color": "#3b82f6"
+    },
+    {
+      "id": "grp_iot",
+      "name": "智慧家電",
+      "color": "#22c55e"
+    },
+    {
+      "id": "grp_security",
+      "name": "監控",
+      "color": "#ef4444"
+    }
+  ],
+  "categories": [
+    {
+      "id": "cat_modem",
+      "name": "數據機",
+      "icon": "modem",
+      "tier": "core",
+      "builtin": true,
+      "defaultMonitor": "icmp"
+    },
+    {
+      "id": "cat_router",
+      "name": "路由器",
+      "icon": "router",
+      "tier": "core",
+      "builtin": true,
+      "defaultMonitor": "icmp"
+    },
+    {
+      "id": "cat_mesh",
+      "name": "Mesh 節點",
+      "icon": "mesh",
+      "tier": "distribution",
+      "builtin": true,
+      "defaultMonitor": "icmp"
+    },
+    {
+      "id": "cat_switch",
+      "name": "交換器",
+      "icon": "switch",
+      "tier": "distribution",
+      "builtin": true,
+      "defaultMonitor": "icmp"
+    },
+    {
+      "id": "cat_poe_switch",
+      "name": "PoE 交換器",
+      "icon": "poe-switch",
+      "tier": "distribution",
+      "builtin": true,
+      "defaultMonitor": "icmp"
+    },
+    {
+      "id": "cat_ap",
+      "name": "無線基地台",
+      "icon": "ap",
+      "tier": "access",
+      "builtin": true,
+      "defaultMonitor": "icmp"
+    },
+    {
+      "id": "cat_nvr",
+      "name": "NVR",
+      "icon": "nvr",
+      "tier": "endpoint",
+      "builtin": true,
+      "defaultMonitor": "icmp"
+    },
+    {
+      "id": "cat_camera",
+      "name": "IP 攝影機",
+      "icon": "camera",
+      "tier": "endpoint",
+      "builtin": true,
+      "defaultMonitor": "icmp"
+    },
+    {
+      "id": "cat_pc",
+      "name": "電腦",
+      "icon": "pc",
+      "tier": "endpoint",
+      "builtin": true,
+      "defaultMonitor": "icmp"
+    },
+    {
+      "id": "cat_mobile",
+      "name": "手機／平板",
+      "icon": "mobile",
+      "tier": "endpoint",
+      "builtin": true,
+      "defaultMonitor": "none"
+    },
+    {
+      "id": "cat_tv",
+      "name": "電視／機上盒",
+      "icon": "tv",
+      "tier": "endpoint",
+      "builtin": true,
+      "defaultMonitor": "icmp"
+    },
+    {
+      "id": "cat_iot",
+      "name": "智慧家電",
+      "icon": "iot",
+      "tier": "endpoint",
+      "builtin": true,
+      "defaultMonitor": "icmp"
+    },
+    {
+      "id": "cat_printer",
+      "name": "印表機",
+      "icon": "printer",
+      "tier": "endpoint",
+      "builtin": true,
+      "defaultMonitor": "icmp"
+    },
+    {
+      "id": "cat_nas",
+      "name": "NAS",
+      "icon": "nas",
+      "tier": "endpoint",
+      "builtin": true,
+      "defaultMonitor": "icmp"
+    },
+    {
+      "id": "cat_other",
+      "name": "其他",
+      "icon": "other",
+      "tier": "endpoint",
+      "builtin": true,
+      "defaultMonitor": "icmp"
+    }
+  ],
+  "devices": [
+    {
+      "id": "dev_modem",
+      "code": "M01",
+      "name": "光纖數據機",
+      "categoryId": "cat_modem",
+      "floorId": "flr_1",
+      "roomId": "room_utility",
+      "groupIds": [],
+      "ip": "192.168.100.1",
+      "mac": "02:00:5E:10:00:01",
+      "hostname": "",
+      "vendor": "中華電信",
+      "model": "ONT",
+      "uplink": null,
+      "monitor": {
+        "method": "icmp",
+        "port": null,
+        "path": "/",
+        "intervalSec": 60,
+        "critical": true
+      },
+      "notes": "ISP 提供",
+      "createdAt": "2026-10-01T08:00:00.000Z",
+      "updatedAt": "2026-10-01T08:00:00.000Z"
+    },
+    {
+      "id": "dev_router",
+      "code": "R01",
+      "name": "主路由器",
+      "categoryId": "cat_router",
+      "floorId": "flr_1",
+      "roomId": "room_utility",
+      "groupIds": [
+        "grp_family"
+      ],
+      "ip": "192.168.1.1",
+      "mac": "02:00:5E:10:00:02",
+      "hostname": "",
+      "vendor": "Zyxel",
+      "model": "NBG7815",
+      "uplink": {
+        "deviceId": "dev_modem",
+        "port": "LAN1",
+        "localPort": "WAN",
+        "medium": "ethernet",
+        "speed": "1G"
+      },
+      "monitor": {
+        "method": "icmp",
+        "port": null,
+        "path": "/",
+        "intervalSec": 60,
+        "critical": true
+      },
+      "notes": "",
+      "createdAt": "2026-10-01T08:00:00.000Z",
+      "updatedAt": "2026-10-01T08:00:00.000Z"
+    },
+    {
+      "id": "dev_swcore",
+      "code": "S01",
+      "name": "核心交換器",
+      "categoryId": "cat_switch",
+      "floorId": "flr_1",
+      "roomId": "room_utility",
+      "groupIds": [],
+      "ip": "192.168.1.2",
+      "mac": "02:00:5E:10:00:03",
+      "hostname": "",
+      "vendor": "TP-Link",
+      "model": "TL-SG2210P",
+      "uplink": {
+        "deviceId": "dev_router",
+        "port": "LAN2",
+        "localPort": "P1",
+        "medium": "ethernet",
+        "speed": "1G"
+      },
+      "monitor": {
+        "method": "icmp",
+        "port": null,
+        "path": "/",
+        "intervalSec": 60,
+        "critical": true
+      },
+      "notes": "",
+      "createdAt": "2026-10-01T08:00:00.000Z",
+      "updatedAt": "2026-10-01T08:00:00.000Z"
+    },
+    {
+      "id": "dev_poesw",
+      "code": "S02",
+      "name": "PoE 交換器",
+      "categoryId": "cat_poe_switch",
+      "floorId": "flr_1",
+      "roomId": "room_utility",
+      "groupIds": [
+        "grp_security"
+      ],
+      "ip": "192.168.1.3",
+      "mac": "02:00:5E:10:00:04",
+      "hostname": "",
+      "vendor": "TP-Link",
+      "model": "TL-SG1210P",
+      "uplink": {
+        "deviceId": "dev_swcore",
+        "port": "SFP1",
+        "localPort": "SFP1",
+        "medium": "fiber",
+        "speed": "10G"
+      },
+      "monitor": {
+        "method": "icmp",
+        "port": null,
+        "path": "/",
+        "intervalSec": 60,
+        "critical": true
+      },
+      "notes": "供電給 8 支攝影機與 2F 基地台",
+      "createdAt": "2026-10-01T08:00:00.000Z",
+      "updatedAt": "2026-10-01T08:00:00.000Z"
+    },
+    {
+      "id": "dev_mesh1",
+      "code": "W01",
+      "name": "Mesh 主節點",
+      "categoryId": "cat_mesh",
+      "floorId": "flr_1",
+      "roomId": "room_living",
+      "groupIds": [
+        "grp_family"
+      ],
+      "ip": "192.168.1.4",
+      "mac": "02:00:5E:10:00:05",
+      "hostname": "",
+      "vendor": "Zyxel",
+      "model": "WSQ60",
+      "uplink": {
+        "deviceId": "dev_router",
+        "port": "LAN3",
+        "localPort": "LAN1",
+        "medium": "ethernet",
+        "speed": "1G"
+      },
+      "monitor": {
+        "method": "icmp",
+        "port": null,
+        "path": "/",
+        "intervalSec": 60,
+        "critical": true
+      },
+      "notes": "",
+      "createdAt": "2026-10-01T08:00:00.000Z",
+      "updatedAt": "2026-10-01T08:00:00.000Z"
+    },
+    {
+      "id": "dev_mesh2",
+      "code": "W02",
+      "name": "Mesh 節點 2F",
+      "categoryId": "cat_mesh",
+      "floorId": "flr_2",
+      "roomId": "room_study",
+      "groupIds": [
+        "grp_family"
+      ],
+      "ip": "192.168.1.5",
+      "mac": "02:00:5E:10:00:06",
+      "hostname": "",
+      "vendor": "Zyxel",
+      "model": "WSQ60",
+      "uplink": {
+        "deviceId": "dev_mesh1",
+        "port": "",
+        "localPort": "",
+        "medium": "mesh",
+        "speed": "866M"
+      },
+      "monitor": {
+        "method": "icmp",
+        "port": null,
+        "path": "/",
+        "intervalSec": 60,
+        "critical": false
+      },
+      "notes": "",
+      "createdAt": "2026-10-01T08:00:00.000Z",
+      "updatedAt": "2026-10-01T08:00:00.000Z"
+    },
+    {
+      "id": "dev_mesh3",
+      "code": "W03",
+      "name": "Mesh 節點 3F",
+      "categoryId": "cat_mesh",
+      "floorId": "flr_3",
+      "roomId": "room_game",
+      "groupIds": [
+        "grp_family"
+      ],
+      "ip": "192.168.1.6",
+      "mac": "02:00:5E:10:00:07",
+      "hostname": "",
+      "vendor": "Zyxel",
+      "model": "WSQ60",
+      "uplink": {
+        "deviceId": "dev_mesh2",
+        "port": "",
+        "localPort": "",
+        "medium": "mesh",
+        "speed": "866M"
+      },
+      "monitor": {
+        "method": "icmp",
+        "port": null,
+        "path": "/",
+        "intervalSec": 60,
+        "critical": false
+      },
+      "notes": "",
+      "createdAt": "2026-10-01T08:00:00.000Z",
+      "updatedAt": "2026-10-01T08:00:00.000Z"
+    },
+    {
+      "id": "dev_ap2",
+      "code": "W04",
+      "name": "2F 無線基地台",
+      "categoryId": "cat_ap",
+      "floorId": "flr_2",
+      "roomId": "room_master",
+      "groupIds": [
+        "grp_family"
+      ],
+      "ip": "192.168.1.7",
+      "mac": "02:00:5E:10:00:08",
+      "hostname": "",
+      "vendor": "Ubiquiti",
+      "model": "U6-Lite",
+      "uplink": {
+        "deviceId": "dev_poesw",
+        "port": "P2",
+        "localPort": "LAN",
+        "medium": "poe",
+        "speed": "1G"
+      },
+      "monitor": {
+        "method": "icmp",
+        "port": null,
+        "path": "/",
+        "intervalSec": 60,
+        "critical": false
+      },
+      "notes": "",
+      "createdAt": "2026-10-01T08:00:00.000Z",
+      "updatedAt": "2026-10-01T08:00:00.000Z"
+    },
+    {
+      "id": "dev_nas",
+      "code": "N01",
+      "name": "家用 NAS",
+      "categoryId": "cat_nas",
+      "floorId": "flr_1",
+      "roomId": "room_utility",
+      "groupIds": [
+        "grp_family"
+      ],
+      "ip": "192.168.1.10",
+      "mac": "02:00:5E:10:00:09",
+      "hostname": "",
+      "vendor": "Synology",
+      "model": "DS224+",
+      "uplink": {
+        "deviceId": "dev_swcore",
+        "port": "P3",
+        "localPort": "LAN1",
+        "medium": "ethernet",
+        "speed": "2.5G"
+      },
+      "monitor": {
+        "method": "tcp",
+        "port": 5000,
+        "path": "/",
+        "intervalSec": 60,
+        "critical": false
+      },
+      "notes": "",
+      "createdAt": "2026-10-01T08:00:00.000Z",
+      "updatedAt": "2026-10-01T08:00:00.000Z"
+    },
+    {
+      "id": "dev_nvr",
+      "code": "V01",
+      "name": "NVR 錄影主機",
+      "categoryId": "cat_nvr",
+      "floorId": "flr_1",
+      "roomId": "room_utility",
+      "groupIds": [
+        "grp_security"
+      ],
+      "ip": "192.168.1.20",
+      "mac": "02:00:5E:10:00:0A",
+      "hostname": "",
+      "vendor": "Hikvision",
+      "model": "DS-7608NI",
+      "uplink": {
+        "deviceId": "dev_swcore",
+        "port": "P4",
+        "localPort": "LAN",
+        "medium": "ethernet",
+        "speed": "1G"
+      },
+      "monitor": {
+        "method": "http",
+        "port": 80,
+        "path": "/",
+        "intervalSec": 60,
+        "critical": true
+      },
+      "notes": "",
+      "createdAt": "2026-10-01T08:00:00.000Z",
+      "updatedAt": "2026-10-01T08:00:00.000Z"
+    },
+    {
+      "id": "dev_cam1",
+      "code": "C01",
+      "name": "前門攝影機",
+      "categoryId": "cat_camera",
+      "floorId": "flr_1",
+      "roomId": "room_living",
+      "groupIds": [
+        "grp_security"
+      ],
+      "ip": "192.168.1.31",
+      "mac": "02:00:5E:10:00:0B",
+      "hostname": "",
+      "vendor": "Hikvision",
+      "model": "DS-2CD",
+      "uplink": {
+        "deviceId": "dev_poesw",
+        "port": "P3",
+        "localPort": "LAN",
+        "medium": "poe",
+        "speed": "100M"
+      },
+      "monitor": {
+        "method": "icmp",
+        "port": null,
+        "path": "/",
+        "intervalSec": 60,
+        "critical": false
+      },
+      "notes": "",
+      "createdAt": "2026-10-01T08:00:00.000Z",
+      "updatedAt": "2026-10-01T08:00:00.000Z"
+    },
+    {
+      "id": "dev_cam2",
+      "code": "C02",
+      "name": "後門攝影機",
+      "categoryId": "cat_camera",
+      "floorId": "flr_1",
+      "roomId": "room_kitchen",
+      "groupIds": [
+        "grp_security"
+      ],
+      "ip": "192.168.1.32",
+      "mac": "02:00:5E:10:00:0C",
+      "hostname": "",
+      "vendor": "Hikvision",
+      "model": "DS-2CD",
+      "uplink": {
+        "deviceId": "dev_poesw",
+        "port": "P4",
+        "localPort": "LAN",
+        "medium": "poe",
+        "speed": "100M"
+      },
+      "monitor": {
+        "method": "icmp",
+        "port": null,
+        "path": "/",
+        "intervalSec": 60,
+        "critical": false
+      },
+      "notes": "",
+      "createdAt": "2026-10-01T08:00:00.000Z",
+      "updatedAt": "2026-10-01T08:00:00.000Z"
+    },
+    {
+      "id": "dev_cam3",
+      "code": "C03",
+      "name": "車道攝影機",
+      "categoryId": "cat_camera",
+      "floorId": "flr_1",
+      "roomId": "room_utility",
+      "groupIds": [
+        "grp_security"
+      ],
+      "ip": "192.168.1.33",
+      "mac": "02:00:5E:10:00:0D",
+      "hostname": "",
+      "vendor": "Hikvision",
+      "model": "DS-2CD",
+      "uplink": {
+        "deviceId": "dev_poesw",
+        "port": "P5",
+        "localPort": "LAN",
+        "medium": "poe",
+        "speed": "100M"
+      },
+      "monitor": {
+        "method": "icmp",
+        "port": null,
+        "path": "/",
+        "intervalSec": 60,
+        "critical": false
+      },
+      "notes": "",
+      "createdAt": "2026-10-01T08:00:00.000Z",
+      "updatedAt": "2026-10-01T08:00:00.000Z"
+    },
+    {
+      "id": "dev_cam4",
+      "code": "C04",
+      "name": "客廳攝影機",
+      "categoryId": "cat_camera",
+      "floorId": "flr_1",
+      "roomId": "room_living",
+      "groupIds": [
+        "grp_security"
+      ],
+      "ip": "192.168.1.34",
+      "mac": "02:00:5E:10:00:0E",
+      "hostname": "",
+      "vendor": "Hikvision",
+      "model": "DS-2CD",
+      "uplink": {
+        "deviceId": "dev_poesw",
+        "port": "P6",
+        "localPort": "LAN",
+        "medium": "poe",
+        "speed": "100M"
+      },
+      "monitor": {
+        "method": "icmp",
+        "port": null,
+        "path": "/",
+        "intervalSec": 60,
+        "critical": false
+      },
+      "notes": "",
+      "createdAt": "2026-10-01T08:00:00.000Z",
+      "updatedAt": "2026-10-01T08:00:00.000Z"
+    },
+    {
+      "id": "dev_cam5",
+      "code": "C05",
+      "name": "2F 走廊攝影機",
+      "categoryId": "cat_camera",
+      "floorId": "flr_2",
+      "roomId": "room_study",
+      "groupIds": [
+        "grp_security"
+      ],
+      "ip": "192.168.1.35",
+      "mac": "02:00:5E:10:00:0F",
+      "hostname": "",
+      "vendor": "Hikvision",
+      "model": "DS-2CD",
+      "uplink": {
+        "deviceId": "dev_poesw",
+        "port": "P7",
+        "localPort": "LAN",
+        "medium": "poe",
+        "speed": "100M"
+      },
+      "monitor": {
+        "method": "icmp",
+        "port": null,
+        "path": "/",
+        "intervalSec": 60,
+        "critical": false
+      },
+      "notes": "",
+      "createdAt": "2026-10-01T08:00:00.000Z",
+      "updatedAt": "2026-10-01T08:00:00.000Z"
+    },
+    {
+      "id": "dev_cam6",
+      "code": "C06",
+      "name": "樓梯攝影機",
+      "categoryId": "cat_camera",
+      "floorId": "flr_2",
+      "roomId": "room_kids",
+      "groupIds": [
+        "grp_security"
+      ],
+      "ip": "192.168.1.36",
+      "mac": "02:00:5E:10:00:10",
+      "hostname": "",
+      "vendor": "Hikvision",
+      "model": "DS-2CD",
+      "uplink": {
+        "deviceId": "dev_poesw",
+        "port": "P8",
+        "localPort": "LAN",
+        "medium": "poe",
+        "speed": "100M"
+      },
+      "monitor": {
+        "method": "icmp",
+        "port": null,
+        "path": "/",
+        "intervalSec": 60,
+        "critical": false
+      },
+      "notes": "",
+      "createdAt": "2026-10-01T08:00:00.000Z",
+      "updatedAt": "2026-10-01T08:00:00.000Z"
+    },
+    {
+      "id": "dev_cam7",
+      "code": "C07",
+      "name": "陽台攝影機",
+      "categoryId": "cat_camera",
+      "floorId": "flr_3",
+      "roomId": "room_balcony",
+      "groupIds": [
+        "grp_security"
+      ],
+      "ip": "192.168.1.37",
+      "mac": "02:00:5E:10:00:11",
+      "hostname": "",
+      "vendor": "Hikvision",
+      "model": "DS-2CD",
+      "uplink": {
+        "deviceId": "dev_poesw",
+        "port": "P9",
+        "localPort": "LAN",
+        "medium": "poe",
+        "speed": "100M"
+      },
+      "monitor": {
+        "method": "icmp",
+        "port": null,
+        "path": "/",
+        "intervalSec": 60,
+        "critical": false
+      },
+      "notes": "",
+      "createdAt": "2026-10-01T08:00:00.000Z",
+      "updatedAt": "2026-10-01T08:00:00.000Z"
+    },
+    {
+      "id": "dev_cam8",
+      "code": "C08",
+      "name": "3F 走廊攝影機",
+      "categoryId": "cat_camera",
+      "floorId": "flr_3",
+      "roomId": "room_game",
+      "groupIds": [
+        "grp_security"
+      ],
+      "ip": "192.168.1.38",
+      "mac": "02:00:5E:10:00:12",
+      "hostname": "",
+      "vendor": "Hikvision",
+      "model": "DS-2CD",
+      "uplink": {
+        "deviceId": "dev_poesw",
+        "port": "P10",
+        "localPort": "LAN",
+        "medium": "poe",
+        "speed": "100M"
+      },
+      "monitor": {
+        "method": "icmp",
+        "port": null,
+        "path": "/",
+        "intervalSec": 60,
+        "critical": false
+      },
+      "notes": "",
+      "createdAt": "2026-10-01T08:00:00.000Z",
+      "updatedAt": "2026-10-01T08:00:00.000Z"
+    },
+    {
+      "id": "dev_tv1",
+      "code": "T01",
+      "name": "客廳電視",
+      "categoryId": "cat_tv",
+      "floorId": "flr_1",
+      "roomId": "room_living",
+      "groupIds": [
+        "grp_family"
+      ],
+      "ip": "192.168.1.41",
+      "mac": "02:00:5E:10:00:13",
+      "hostname": "",
+      "vendor": "Sony",
+      "model": "KD-55X80L",
+      "uplink": {
+        "deviceId": "dev_mesh1",
+        "port": "",
+        "localPort": "",
+        "medium": "wifi",
+        "speed": "5G"
+      },
+      "monitor": {
+        "method": "icmp",
+        "port": null,
+        "path": "/",
+        "intervalSec": 60,
+        "critical": false
+      },
+      "notes": "",
+      "createdAt": "2026-10-01T08:00:00.000Z",
+      "updatedAt": "2026-10-01T08:00:00.000Z"
+    },
+    {
+      "id": "dev_pc1",
+      "code": "P01",
+      "name": "書房電腦",
+      "categoryId": "cat_pc",
+      "floorId": "flr_2",
+      "roomId": "room_study",
+      "groupIds": [
+        "grp_family"
+      ],
+      "ip": "192.168.1.42",
+      "mac": "02:00:5E:10:00:14",
+      "hostname": "",
+      "vendor": "Apple",
+      "model": "Mac mini",
+      "uplink": {
+        "deviceId": "dev_swcore",
+        "port": "P5",
+        "localPort": "LAN",
+        "medium": "ethernet",
+        "speed": "1G"
+      },
+      "monitor": {
+        "method": "icmp",
+        "port": null,
+        "path": "/",
+        "intervalSec": 60,
+        "critical": false
+      },
+      "notes": "",
+      "createdAt": "2026-10-01T08:00:00.000Z",
+      "updatedAt": "2026-10-01T08:00:00.000Z"
+    },
+    {
+      "id": "dev_printer",
+      "code": "PR1",
+      "name": "雷射印表機",
+      "categoryId": "cat_printer",
+      "floorId": "flr_2",
+      "roomId": "room_study",
+      "groupIds": [
+        "grp_family"
+      ],
+      "ip": "192.168.1.43",
+      "mac": "02:00:5E:10:00:15",
+      "hostname": "",
+      "vendor": "Brother",
+      "model": "HL-L2375DW",
+      "uplink": {
+        "deviceId": "dev_mesh2",
+        "port": "",
+        "localPort": "",
+        "medium": "wifi",
+        "speed": "2.4G"
+      },
+      "monitor": {
+        "method": "tcp",
+        "port": 9100,
+        "path": "/",
+        "intervalSec": 60,
+        "critical": false
+      },
+      "notes": "",
+      "createdAt": "2026-10-01T08:00:00.000Z",
+      "updatedAt": "2026-10-01T08:00:00.000Z"
+    },
+    {
+      "id": "dev_phone1",
+      "code": "H01",
+      "name": "爸爸手機",
+      "categoryId": "cat_mobile",
+      "floorId": "flr_1",
+      "roomId": "room_living",
+      "groupIds": [
+        "grp_family"
+      ],
+      "ip": "",
+      "mac": "02:00:5E:10:00:16",
+      "hostname": "",
+      "vendor": "Apple",
+      "model": "iPhone",
+      "uplink": {
+        "deviceId": "dev_mesh1",
+        "port": "",
+        "localPort": "",
+        "medium": "wifi",
+        "speed": "5G"
+      },
+      "monitor": {
+        "method": "none",
+        "port": null,
+        "path": "/",
+        "intervalSec": 60,
+        "critical": false
+      },
+      "notes": "",
+      "createdAt": "2026-10-01T08:00:00.000Z",
+      "updatedAt": "2026-10-01T08:00:00.000Z"
+    },
+    {
+      "id": "dev_phone2",
+      "code": "H02",
+      "name": "媽媽手機",
+      "categoryId": "cat_mobile",
+      "floorId": "flr_2",
+      "roomId": "room_master",
+      "groupIds": [
+        "grp_family"
+      ],
+      "ip": "",
+      "mac": "02:00:5E:10:00:17",
+      "hostname": "",
+      "vendor": "Samsung",
+      "model": "Galaxy",
+      "uplink": {
+        "deviceId": "dev_ap2",
+        "port": "",
+        "localPort": "",
+        "medium": "wifi",
+        "speed": "5G"
+      },
+      "monitor": {
+        "method": "none",
+        "port": null,
+        "path": "/",
+        "intervalSec": 60,
+        "critical": false
+      },
+      "notes": "",
+      "createdAt": "2026-10-01T08:00:00.000Z",
+      "updatedAt": "2026-10-01T08:00:00.000Z"
+    },
+    {
+      "id": "dev_tablet",
+      "code": "H03",
+      "name": "小孩平板",
+      "categoryId": "cat_mobile",
+      "floorId": "flr_2",
+      "roomId": "room_kids",
+      "groupIds": [
+        "grp_family"
+      ],
+      "ip": "",
+      "mac": "02:00:5E:10:00:18",
+      "hostname": "",
+      "vendor": "Apple",
+      "model": "iPad",
+      "uplink": {
+        "deviceId": "dev_ap2",
+        "port": "",
+        "localPort": "",
+        "medium": "wifi",
+        "speed": "5G"
+      },
+      "monitor": {
+        "method": "none",
+        "port": null,
+        "path": "/",
+        "intervalSec": 60,
+        "critical": false
+      },
+      "notes": "",
+      "createdAt": "2026-10-01T08:00:00.000Z",
+      "updatedAt": "2026-10-01T08:00:00.000Z"
+    },
+    {
+      "id": "dev_speaker",
+      "code": "I01",
+      "name": "智慧音箱",
+      "categoryId": "cat_iot",
+      "floorId": "flr_1",
+      "roomId": "room_kitchen",
+      "groupIds": [
+        "grp_iot"
+      ],
+      "ip": "192.168.1.61",
+      "mac": "02:00:5E:10:00:19",
+      "hostname": "",
+      "vendor": "Google",
+      "model": "Nest Audio",
+      "uplink": {
+        "deviceId": "dev_mesh1",
+        "port": "",
+        "localPort": "",
+        "medium": "wifi",
+        "speed": "2.4G"
+      },
+      "monitor": {
+        "method": "icmp",
+        "port": null,
+        "path": "/",
+        "intervalSec": 60,
+        "critical": false
+      },
+      "notes": "",
+      "createdAt": "2026-10-01T08:00:00.000Z",
+      "updatedAt": "2026-10-01T08:00:00.000Z"
+    },
+    {
+      "id": "dev_vacuum",
+      "code": "I02",
+      "name": "掃地機器人",
+      "categoryId": "cat_iot",
+      "floorId": "flr_1",
+      "roomId": "room_living",
+      "groupIds": [
+        "grp_iot"
+      ],
+      "ip": "192.168.1.62",
+      "mac": "02:00:5E:10:00:1A",
+      "hostname": "",
+      "vendor": "Roborock",
+      "model": "S8",
+      "uplink": {
+        "deviceId": "dev_mesh1",
+        "port": "",
+        "localPort": "",
+        "medium": "wifi",
+        "speed": "2.4G"
+      },
+      "monitor": {
+        "method": "icmp",
+        "port": null,
+        "path": "/",
+        "intervalSec": 60,
+        "critical": false
+      },
+      "notes": "",
+      "createdAt": "2026-10-01T08:00:00.000Z",
+      "updatedAt": "2026-10-01T08:00:00.000Z"
+    },
+    {
+      "id": "dev_plug",
+      "code": "I03",
+      "name": "智慧插座",
+      "categoryId": "cat_iot",
+      "floorId": "flr_2",
+      "roomId": "room_master",
+      "groupIds": [
+        "grp_iot"
+      ],
+      "ip": "192.168.1.63",
+      "mac": "02:00:5E:10:00:1B",
+      "hostname": "",
+      "vendor": "TP-Link",
+      "model": "Tapo P110",
+      "uplink": {
+        "deviceId": "dev_ap2",
+        "port": "",
+        "localPort": "",
+        "medium": "wifi",
+        "speed": "2.4G"
+      },
+      "monitor": {
+        "method": "icmp",
+        "port": null,
+        "path": "/",
+        "intervalSec": 60,
+        "critical": false
+      },
+      "notes": "剛加入，尚未偵測",
+      "createdAt": "2026-10-01T08:00:00.000Z",
+      "updatedAt": "2026-10-01T08:00:00.000Z"
+    },
+    {
+      "id": "dev_console",
+      "code": "G01",
+      "name": "遊戲主機",
+      "categoryId": "cat_other",
+      "floorId": "flr_3",
+      "roomId": "room_game",
+      "groupIds": [
+        "grp_family"
+      ],
+      "ip": "192.168.1.64",
+      "mac": "02:00:5E:10:00:1C",
+      "hostname": "",
+      "vendor": "Nintendo",
+      "model": "Switch",
+      "uplink": {
+        "deviceId": "dev_mesh3",
+        "port": "LAN1",
+        "localPort": "LAN",
+        "medium": "ethernet",
+        "speed": "1G"
+      },
+      "monitor": {
+        "method": "icmp",
+        "port": null,
+        "path": "/",
+        "intervalSec": 60,
+        "critical": false
+      },
+      "notes": "",
+      "createdAt": "2026-10-01T08:00:00.000Z",
+      "updatedAt": "2026-10-01T08:00:00.000Z"
+    },
+    {
+      "id": "dev_stb",
+      "code": "T02",
+      "name": "主臥機上盒",
+      "categoryId": "cat_tv",
+      "floorId": "flr_2",
+      "roomId": "room_master",
+      "groupIds": [
+        "grp_family"
+      ],
+      "ip": "192.168.1.44",
+      "mac": "02:00:5E:10:00:1D",
+      "hostname": "",
+      "vendor": "Google",
+      "model": "Chromecast",
+      "uplink": {
+        "deviceId": "dev_ap2",
+        "port": "",
+        "localPort": "",
+        "medium": "wifi",
+        "speed": "5G"
+      },
+      "monitor": {
+        "method": "icmp",
+        "port": null,
+        "path": "/",
+        "intervalSec": 60,
+        "critical": false
+      },
+      "notes": "",
+      "createdAt": "2026-10-01T08:00:00.000Z",
+      "updatedAt": "2026-10-01T08:00:00.000Z"
+    },
+    {
+      "id": "dev_laptop",
+      "code": "P02",
+      "name": "客房筆電",
+      "categoryId": "cat_pc",
+      "floorId": "flr_3",
+      "roomId": "room_guest",
+      "groupIds": [],
+      "ip": "192.168.1.45",
+      "mac": "02:00:5E:10:00:1E",
+      "hostname": "",
+      "vendor": "Lenovo",
+      "model": "ThinkPad",
+      "uplink": {
+        "deviceId": "dev_mesh3",
+        "port": "",
+        "localPort": "",
+        "medium": "wifi",
+        "speed": "5G"
+      },
+      "monitor": {
+        "method": "icmp",
+        "port": null,
+        "path": "/",
+        "intervalSec": 60,
+        "critical": false
+      },
+      "notes": "",
+      "createdAt": "2026-10-01T08:00:00.000Z",
+      "updatedAt": "2026-10-01T08:00:00.000Z"
+    }
+  ],
+  "plans": [
+    {
+      "floorId": "flr_1",
+      "file": "flr_1.png",
+      "mime": "image/png",
+      "width": 800,
+      "height": 500,
+      "updatedAt": "2026-10-01T08:00:00.000Z"
+    }
+  ],
+  "placements": [
+    {
+      "deviceId": "dev_modem",
+      "floorId": "flr_1",
+      "x": 0.08,
+      "y": 0.86
+    },
+    {
+      "deviceId": "dev_router",
+      "floorId": "flr_1",
+      "x": 0.14,
+      "y": 0.86
+    },
+    {
+      "deviceId": "dev_swcore",
+      "floorId": "flr_1",
+      "x": 0.2,
+      "y": 0.86
+    },
+    {
+      "deviceId": "dev_poesw",
+      "floorId": "flr_1",
+      "x": 0.26,
+      "y": 0.86
+    },
+    {
+      "deviceId": "dev_nas",
+      "floorId": "flr_1",
+      "x": 0.12,
+      "y": 0.74
+    },
+    {
+      "deviceId": "dev_nvr",
+      "floorId": "flr_1",
+      "x": 0.22,
+      "y": 0.74
+    },
+    {
+      "deviceId": "dev_mesh1",
+      "floorId": "flr_1",
+      "x": 0.3,
+      "y": 0.45
+    },
+    {
+      "deviceId": "dev_tv1",
+      "floorId": "flr_1",
+      "x": 0.1,
+      "y": 0.2
+    },
+    {
+      "deviceId": "dev_cam1",
+      "floorId": "flr_1",
+      "x": 0.45,
+      "y": 0.08
+    },
+    {
+      "deviceId": "dev_cam2",
+      "floorId": "flr_1",
+      "x": 0.92,
+      "y": 0.1
+    },
+    {
+      "deviceId": "dev_cam4",
+      "floorId": "flr_1",
+      "x": 0.38,
+      "y": 0.35
+    },
+    {
+      "deviceId": "dev_speaker",
+      "floorId": "flr_1",
+      "x": 0.65,
+      "y": 0.2
+    },
+    {
+      "deviceId": "dev_vacuum",
+      "floorId": "flr_1",
+      "x": 0.25,
+      "y": 0.3
+    }
+  ],
+  "statusHistory": [
+    {
+      "deviceId": "dev_router",
+      "samples": [
+        {
+          "at": "2026-10-14T08:26:00.000Z",
+          "up": true,
+          "rttMs": 1.2
+        },
+        {
+          "at": "2026-10-14T08:27:00.000Z",
+          "up": true,
+          "rttMs": 1.1
+        },
+        {
+          "at": "2026-10-14T08:28:00.000Z",
+          "up": true,
+          "rttMs": 1.4
+        },
+        {
+          "at": "2026-10-14T08:29:00.000Z",
+          "up": true,
+          "rttMs": 1
+        },
+        {
+          "at": "2026-10-14T08:30:00.000Z",
+          "up": true,
+          "rttMs": 1.3
+        }
+      ]
+    },
+    {
+      "deviceId": "dev_printer",
+      "samples": [
+        {
+          "at": "2026-10-14T08:26:00.000Z",
+          "up": true,
+          "rttMs": 12.5
+        },
+        {
+          "at": "2026-10-14T08:27:00.000Z",
+          "up": false,
+          "rttMs": null
+        },
+        {
+          "at": "2026-10-14T08:28:00.000Z",
+          "up": false,
+          "rttMs": null
+        },
+        {
+          "at": "2026-10-14T08:29:00.000Z",
+          "up": false,
+          "rttMs": null
+        },
+        {
+          "at": "2026-10-14T08:30:00.000Z",
+          "up": false,
+          "rttMs": null
+        }
+      ]
+    }
+  ],
+  "nvrs": [
+    {
+      "id": "nvr_main",
+      "deviceId": "dev_nvr",
+      "name": "家用 NVR",
+      "brand": "hikvision",
+      "host": "192.168.1.20",
+      "port": 554,
+      "username": "admin",
+      "channelCount": 8,
+      "streamMain": "1",
+      "streamSub": "2",
+      "urlTemplate": null,
+      "channels": [
+        {
+          "ch": 1,
+          "name": "前門",
+          "deviceId": "dev_cam1",
+          "enabled": true
+        },
+        {
+          "ch": 2,
+          "name": "後門",
+          "deviceId": "dev_cam2",
+          "enabled": true
+        },
+        {
+          "ch": 3,
+          "name": "車道",
+          "deviceId": "dev_cam3",
+          "enabled": true
+        },
+        {
+          "ch": 4,
+          "name": "客廳",
+          "deviceId": "dev_cam4",
+          "enabled": true
+        },
+        {
+          "ch": 5,
+          "name": "2F 走廊",
+          "deviceId": "dev_cam5",
+          "enabled": true
+        },
+        {
+          "ch": 6,
+          "name": "樓梯",
+          "deviceId": "dev_cam6",
+          "enabled": true
+        },
+        {
+          "ch": 7,
+          "name": "陽台",
+          "deviceId": "dev_cam7",
+          "enabled": true
+        },
+        {
+          "ch": 8,
+          "name": "3F 走廊",
+          "deviceId": "dev_cam8",
+          "enabled": true
+        }
+      ]
+    }
+  ]
+}

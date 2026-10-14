@@ -1,0 +1,17 @@
+[
+  { "id": "cat_modem", "name": "數據機", "icon": "modem", "tier": "core", "builtin": true, "defaultMonitor": "icmp" },
+  { "id": "cat_router", "name": "路由器", "icon": "router", "tier": "core", "builtin": true, "defaultMonitor": "icmp" },
+  { "id": "cat_mesh", "name": "Mesh 節點", "icon": "mesh", "tier": "distribution", "builtin": true, "defaultMonitor": "icmp" },
+  { "id": "cat_switch", "name": "交換器", "icon": "switch", "tier": "distribution", "builtin": true, "defaultMonitor": "icmp" },
+  { "id": "cat_poe_switch", "name": "PoE 交換器", "icon": "poe-switch", "tier": "distribution", "builtin": true, "defaultMonitor": "icmp" },
+  { "id": "cat_ap", "name": "無線基地台", "icon": "ap", "tier": "access", "builtin": true, "defaultMonitor": "icmp" },
+  { "id": "cat_nvr", "name": "NVR", "icon": "nvr", "tier": "endpoint", "builtin": true, "defaultMonitor": "icmp" },
+  { "id": "cat_camera", "name": "IP 攝影機", "icon": "camera", "tier": "endpoint", "builtin": true, "defaultMonitor": "icmp" },
+  { "id": "cat_pc", "name": "電腦", "icon": "pc", "tier": "endpoint", "builtin": true, "defaultMonitor": "icmp" },
+  { "id": "cat_mobile", "name": "手機／平板", "icon": "mobile", "tier": "endpoint", "builtin": true, "defaultMonitor": "none" },
+  { "id": "cat_tv", "name": "電視／機上盒", "icon": "tv", "tier": "endpoint", "builtin": true, "defaultMonitor": "icmp" },
+  { "id": "cat_iot", "name": "智慧家電", "icon": "iot", "tier": "endpoint", "builtin": true, "defaultMonitor": "icmp" },
+  { "id": "cat_printer", "name": "印表機", "icon": "printer", "tier": "endpoint", "builtin": true, "defaultMonitor": "icmp" },
+  { "id": "cat_nas", "name": "NAS", "icon": "nas", "tier": "endpoint", "builtin": true, "defaultMonitor": "icmp" },
+  { "id": "cat_other", "name": "其他", "icon": "other", "tier": "endpoint", "builtin": true, "defaultMonitor": "icmp" }
+]

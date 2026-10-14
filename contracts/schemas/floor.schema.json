@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://networkconnect.local/schemas/floor.schema.json",
+  "title": "Floor（樓層）",
+  "description": "collection `floors`，擁有者 inventory。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name", "order", "createdAt", "updatedAt"],
+  "properties": {
+    "id": { "$ref": "common.schema.json#/$defs/FloorId" },
+    "name": { "$ref": "common.schema.json#/$defs/Name", "description": "樓層名稱，例：1F", "examples": ["1F"] },
+    "order": { "type": "integer", "description": "排序，小的在前", "default": 0, "examples": [1] },
+    "createdAt": { "$ref": "common.schema.json#/$defs/Timestamp" },
+    "updatedAt": { "$ref": "common.schema.json#/$defs/Timestamp" }
+  }
+}

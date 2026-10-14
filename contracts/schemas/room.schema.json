@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://networkconnect.local/schemas/room.schema.json",
+  "title": "Room（房間）",
+  "description": "collection `rooms`，擁有者 inventory。房間隸屬於一個樓層。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "floorId", "name", "order"],
+  "properties": {
+    "id": { "$ref": "common.schema.json#/$defs/RoomId" },
+    "floorId": { "$ref": "common.schema.json#/$defs/FloorId" },
+    "name": { "$ref": "common.schema.json#/$defs/Name", "examples": ["客廳"] },
+    "order": { "type": "integer", "default": 0, "description": "同一樓層內的排序", "examples": [1] }
+  }
+}

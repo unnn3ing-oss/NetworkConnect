@@ -1,0 +1,9 @@
+node_modules/
+data/
+data-mock/
+*.log
+.DS_Store
+dist/
+out/
+playwright-report/
+test-results/

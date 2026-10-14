@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://networkconnect.local/schemas/api-auth.schema.json",
+  "title": "core/auth API",
+  "$defs": {
+    "AuthStatus": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "authenticated"],
+      "properties": {
+        "enabled": { "type": "boolean", "description": "是否已設定存取密碼" },
+        "authenticated": { "type": "boolean", "description": "目前這個請求是否已通過驗證（未設密碼時恆為 true）" }
+      }
+    },
+    "LoginRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["password"],
+      "properties": { "password": { "type": "string", "minLength": 1, "maxLength": 128 } }
+    },
+    "PasswordRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["password"],
+      "properties": {
+        "password": {
+          "anyOf": [{ "type": "string", "minLength": 4, "maxLength": 128 }, { "type": "null" }],
+          "description": "新密碼（4–128 字元）；null＝取消密碼保護"
+        },
+        "current": { "type": "string", "maxLength": 128, "description": "目前密碼；已設定密碼時必填" }
+      }
+    },
+    "PasswordResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ok", "enabled"],
+      "properties": { "ok": { "const": true }, "enabled": { "type": "boolean" } }
+    }
+  }
+}

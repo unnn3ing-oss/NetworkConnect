@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://networkconnect.local/schemas/api-io.schema.json",
+  "title": "io 模組 API（匯出入）",
+  "$defs": {
+    "Export": {
+      "type": "object",
+      "description": "GET /api/export 的回應，也是 POST /api/import 的請求本文",
+      "additionalProperties": false,
+      "required": ["format", "version", "exportedAt", "includesSecrets", "collections", "planFiles"],
+      "properties": {
+        "format": { "const": "networkconnect-export" },
+        "version": { "const": 1 },
+        "exportedAt": { "$ref": "common.schema.json#/$defs/Timestamp" },
+        "includesSecrets": { "type": "boolean", "description": "是否含密碼（?secrets=1 才為 true）" },
+        "collections": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["floors", "rooms", "groups", "categories", "devices", "plans", "placements", "nvrs"],
+          "properties": {
+            "floors": { "type": "array", "items": { "$ref": "floor.schema.json" } },
+            "rooms": { "type": "array", "items": { "$ref": "room.schema.json" } },
+            "groups": { "type": "array", "items": { "$ref": "group.schema.json" } },
+            "categories": { "type": "array", "items": { "$ref": "category.schema.json" } },
+            "devices": { "type": "array", "items": { "$ref": "device.schema.json" } },
+            "plans": { "type": "array", "items": { "$ref": "plan.schema.json" } },
+            "placements": { "type": "array", "items": { "$ref": "placement.schema.json" } },
+            "statusHistory": { "type": "array", "items": { "$ref": "status-history.schema.json" }, "description": "選填；備份預設不含" },
+            "nvrs": { "type": "array", "items": { "$ref": "nvr.schema.json" } }
+          }
+        },
+        "planFiles": {
+          "type": "object",
+          "description": "平面圖檔：key 為 plans[].file，value 為 base64",
+          "additionalProperties": { "type": "string" }
+        },
+        "secrets": {
+          "type": "object",
+          "description": "僅 includesSecrets=true 時存在：secrets.json 的內容（不含 auth 存取密碼雜湊）",
+          "additionalProperties": { "type": "string" }
+        }
+      }
+    },
+    "ImportResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ok", "counts"],
+      "properties": {
+        "ok": { "const": true },
+        "counts": {
+          "type": "object",
+          "description": "寫入後各 collection 的筆數",
+          "additionalProperties": { "type": "integer", "minimum": 0 }
+        }
+      }
+    },
+    "CsvImportReport": {
+      "type": "object",
+      "description": "POST /api/import/csv 的回應。?dryRun=1 時只回報、不寫入。",
+      "additionalProperties": false,
+      "required": ["dryRun", "created", "skipped", "unmatchedCategories", "warnings"],
+      "properties": {
+        "dryRun": { "type": "boolean" },
+        "created": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["devices", "floors", "rooms"],
+          "properties": {
+            "devices": { "type": "integer", "minimum": 0 },
+            "floors": { "type": "integer", "minimum": 0 },
+            "rooms": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "skipped": {
+          "type": "array",
+          "description": "未匯入的列（缺名稱、編號重複等）",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["row", "reason"],
+            "properties": { "row": { "type": "integer", "minimum": 1, "description": "CSV 列號（含標題列，從 1 起）" }, "reason": { "type": "string" } }
+          }
+        },
+        "unmatchedCategories": {
+          "type": "array",
+          "description": "類別關鍵字對不到而歸入「其他」的列",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["row", "name", "category"],
+            "properties": { "row": { "type": "integer", "minimum": 1 }, "name": { "type": "string" }, "category": { "type": "string", "description": "原始類別欄文字" } }
+          }
+        },
+        "warnings": { "type": "array", "items": { "type": "string" }, "description": "其他提醒（例：上游編號找不到，已設為根節點）" }
+      }
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://networkconnect.local/schemas/status-history.schema.json",
+  "title": "StatusHistory（偵測歷史）",
+  "description": "collection `statusHistory`，擁有者 monitor，主鍵為 deviceId。每台保留最近 1440 筆（環狀，最舊的先丟）。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["deviceId", "samples"],
+  "properties": {
+    "deviceId": { "$ref": "common.schema.json#/$defs/DeviceId" },
+    "samples": {
+      "type": "array",
+      "maxItems": 1440,
+      "description": "由舊到新排序",
+      "items": { "$ref": "#/$defs/Sample" }
+    }
+  },
+  "$defs": {
+    "Sample": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["at", "up", "rttMs"],
+      "properties": {
+        "at": { "$ref": "common.schema.json#/$defs/Timestamp" },
+        "up": { "type": "boolean", "description": "該次偵測是否成功（單次結果，非 3 次失敗後的 down 判定）" },
+        "rttMs": { "type": ["number", "null"], "minimum": 0, "description": "往返時間（毫秒）；失敗為 null", "examples": [3.2, null] }
+      }
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://networkconnect.local/schemas/config.schema.json",
+  "title": "Config（<dataDir>/config.json）",
+  "description": "伺服器設定檔。不存在時以預設值建立；缺的欄位以預設值補上。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["port", "lanAccess", "modules", "go2rtcPath", "go2rtcUrl"],
+  "properties": {
+    "port": { "type": "integer", "minimum": 0, "maximum": 65535, "default": 8780, "description": "監聽埠；被佔用時往後找（最多 20 個），實際埠號會寫回此欄位" },
+    "lanAccess": { "type": "boolean", "default": true, "description": "允許區網連線（綁 0.0.0.0）；false 時只綁 127.0.0.1" },
+    "modules": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "各後端模組開關；false＝disabled（system 模組不可停用）",
+      "properties": {
+        "inventory": { "type": "boolean", "default": true },
+        "io": { "type": "boolean", "default": true },
+        "monitor": { "type": "boolean", "default": true },
+        "floorplan": { "type": "boolean", "default": true },
+        "nvr": { "type": "boolean", "default": true }
+      }
+    },
+    "go2rtcPath": { "type": ["string", "null"], "default": null, "description": "go2rtc 執行檔路徑；null（開發模式）時 nvr 模組改連 go2rtcUrl" },
+    "go2rtcUrl": { "type": "string", "default": "http://127.0.0.1:1984", "description": "go2rtc API 位址（僅在 go2rtcPath 為 null 時使用；受管模式固定 127.0.0.1:1984）" }
+  }
+}

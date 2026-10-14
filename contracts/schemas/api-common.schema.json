@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://networkconnect.local/schemas/api-common.schema.json",
+  "title": "API 共用格式",
+  "$defs": {
+    "ErrorCode": {
+      "type": "string",
+      "description": "NOT_FOUND 404；CONFLICT 409；VALIDATION 400；CYCLE 422；UPSTREAM 502（go2rtc／設備等外部依賴失敗）；INTERNAL 500；UNAUTHORIZED 401（需登入）",
+      "enum": ["NOT_FOUND", "CONFLICT", "VALIDATION", "CYCLE", "UPSTREAM", "INTERNAL", "UNAUTHORIZED"]
+    },
+    "ErrorResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["error"],
+      "properties": {
+        "error": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["code", "message"],
+          "properties": {
+            "code": { "$ref": "#/$defs/ErrorCode" },
+            "message": { "type": "string", "minLength": 1, "description": "繁體中文訊息，可直接顯示給使用者", "examples": ["找不到設備"] },
+            "details": { "description": "選填的補充資訊（驗證錯誤清單、相依物件清單等），格式依錯誤而異" }
+          }
+        }
+      }
+    },
+    "Ok": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ok"],
+      "properties": { "ok": { "const": true } }
+    }
+  }
+}

@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://networkconnect.local/schemas/device.schema.json",
+  "title": "Device（設備）",
+  "description": "collection `devices`，擁有者 inventory。儲存的紀錄必須包含所有欄位（缺的欄位由 inventory 以預設值補齊）；`$defs/Editable` 是使用者可編輯的欄位集合，也是建立／修改請求的基礎。",
+  "allOf": [
+    { "$ref": "#/$defs/Editable" },
+    {
+      "type": "object",
+      "required": ["id", "code", "name", "categoryId", "floorId", "roomId", "groupIds", "ip", "mac", "hostname", "vendor", "model", "uplink", "monitor", "notes", "createdAt", "updatedAt"],
+      "properties": {
+        "id": { "$ref": "common.schema.json#/$defs/DeviceId" },
+        "monitor": { "$ref": "#/$defs/Monitor" },
+        "createdAt": { "$ref": "common.schema.json#/$defs/Timestamp" },
+        "updatedAt": { "$ref": "common.schema.json#/$defs/Timestamp" }
+      }
+    }
+  ],
+  "unevaluatedProperties": false,
+  "$defs": {
+    "Editable": {
+      "type": "object",
+      "description": "使用者可編輯的欄位（全部選填；各欄位的預設值是 inventory 建立時補上的值）",
+      "properties": {
+        "code": { "type": "string", "maxLength": 40, "default": "", "description": "自訂編號，相容舊表（例：R01）；非空時全域不可重複", "examples": ["R01"] },
+        "name": { "$ref": "common.schema.json#/$defs/Name", "description": "設備名稱（必填）", "examples": ["客廳 Mesh 主節點"] },
+        "categoryId": { "$ref": "common.schema.json#/$defs/CategoryId", "description": "設備類別（必填）" },
+        "floorId": { "anyOf": [{ "$ref": "common.schema.json#/$defs/FloorId" }, { "type": "null" }], "default": null, "description": "所在樓層；null＝未指定" },
+        "roomId": { "anyOf": [{ "$ref": "common.schema.json#/$defs/RoomId" }, { "type": "null" }], "default": null, "description": "所在房間；非 null 時該房間必須屬於 floorId" },
+        "groupIds": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/GroupId" }, "uniqueItems": true, "default": [], "description": "所屬組別（多對多）" },
+        "ip": { "$ref": "common.schema.json#/$defs/Ipv4OrEmpty", "default": "" },
+        "mac": { "$ref": "common.schema.json#/$defs/MacOrEmpty", "default": "" },
+        "hostname": { "type": "string", "maxLength": 100, "default": "" },
+        "vendor": { "type": "string", "maxLength": 100, "default": "", "examples": ["Zyxel"] },
+        "model": { "type": "string", "maxLength": 100, "default": "" },
+        "uplink": {
+          "anyOf": [{ "$ref": "#/$defs/Uplink" }, { "type": "null" }],
+          "default": null,
+          "description": "上游連線；null＝根節點（通常是數據機）。上游鏈不可形成迴圈（違反回 422 CYCLE）"
+        },
+        "monitor": { "$ref": "#/$defs/MonitorInput", "description": "偵測設定；建立時缺的欄位以類別的 defaultMonitor 與 Monitor 預設值補齊" },
+        "notes": { "type": "string", "maxLength": 2000, "default": "" }
+      }
+    },
+    "Uplink": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["deviceId", "medium"],
+      "properties": {
+        "deviceId": { "$ref": "common.schema.json#/$defs/DeviceId", "description": "上游設備 id；必須存在且不得是自己" },
+        "port": { "type": "string", "maxLength": 40, "default": "", "description": "上游設備上的埠", "examples": ["LAN1"] },
+        "localPort": { "type": "string", "maxLength": 40, "default": "", "description": "本設備上的埠", "examples": ["WAN"] },
+        "medium": { "$ref": "common.schema.json#/$defs/Medium" },
+        "speed": { "type": "string", "maxLength": 20, "default": "", "description": "速率，自由文字", "examples": ["1G"] }
+      }
+    },
+    "MonitorInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "method": { "$ref": "common.schema.json#/$defs/MonitorMethod", "default": "icmp" },
+        "port": { "anyOf": [{ "type": "integer", "minimum": 1, "maximum": 65535 }, { "type": "null" }], "default": null, "description": "method=tcp／http 時使用的埠；http 為 null 時依 80" },
+        "path": { "type": "string", "maxLength": 200, "default": "/", "description": "method=http 時的路徑" },
+        "intervalSec": { "type": "integer", "minimum": 15, "maximum": 86400, "default": 60, "description": "偵測間隔（秒），最小 15" },
+        "critical": { "type": "boolean", "default": false, "description": "關鍵設備：離線時顯示紅色警示並發系統通知；非關鍵設備離線只顯示灰色「離線」" }
+      }
+    },
+    "Monitor": {
+      "allOf": [{ "$ref": "#/$defs/MonitorInput" }],
+      "required": ["method", "port", "path", "intervalSec", "critical"],
+      "unevaluatedProperties": false,
+      "description": "儲存的紀錄中，monitor 的欄位必須齊全"
+    }
+  }
+}
