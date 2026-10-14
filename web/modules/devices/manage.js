@@ -271,7 +271,9 @@ export async function mountManage(host, service) {
 
   render();
   const off = service.subscribe((kind) => {
-    if (kind === 'data') render();
+    // 編輯中不重畫，否則使用者正在輸入的內容會被背景更新（例如手機端同時修改）蓋掉；
+    // 離開編輯（儲存或取消）時本來就會重畫並帶入最新資料
+    if (kind === 'data' && editing === null) render();
   });
   return {
     destroy() {

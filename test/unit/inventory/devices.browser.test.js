@@ -1,3 +1,5 @@
+import { writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 // devices 頁的瀏覽器測試（Chromium + mock 模式）：列表、狀態燈、新增精靈、編輯、刪除、抽屜、分類管理、匯入匯出、手機版。
 // 需要 Chromium（/opt/pw-browsers 或 NC_CHROMIUM_PATH）；找不到時整檔 skip。
 import { test, describe, before, after } from 'node:test';
@@ -24,10 +26,13 @@ describe('devices 頁（Chromium）', async () => {
 
   /**
    * 每個測試一個全新的 mock 伺服器（資料每次重置）與頁面。
-   * monitor 目前只有 stub（沒有 /api/status），所以預設以假的 /api/status 回應模擬 monitor 可用。
+   * 預設以假的 /api/status 回應固定燈號（status:'fake'）；status:'none' 模擬 monitor 不可用（404）。
    */
   async function boot({ hash = '#/devices', width = 1280, status = 'fake' } = {}) {
-    const server = await startServer({ dataDir: makeTmpDir(), port: 0, host: '127.0.0.1', mock: true, env: {} });
+    const dataDir = makeTmpDir();
+    // status:'none'：真的停用 monitor 模組（沒有 /api/status，也不會有 SSE 狀態事件）
+    if (status === 'none') writeFileSync(join(dataDir, 'config.json'), JSON.stringify({ modules: { monitor: false } }));
+    const server = await startServer({ dataDir, port: 0, host: '127.0.0.1', mock: true, env: {} });
     const context = await browser.newContext({ viewport: { width, height: width < 600 ? 844 : 800 }, acceptDownloads: true });
     const page = await context.newPage();
     const problems = [];
@@ -109,7 +114,7 @@ describe('devices 頁（Chromium）', async () => {
     await page.waitForFunction(() => document.querySelector('.dv-card[data-id="dev_router"] .nc-status')?.dataset.state === 'up');
     assert.deepEqual(problems, []);
 
-    // 偵測不可用：/api/status 404（monitor 還沒有實作）
+    // 偵測不可用：/api/status 404（monitor 停用或不可用）
     const b = await boot({ status: 'none' });
     await b.page.waitForSelector('.dv-card');
     assert.equal(await b.page.locator('.dv-card .nc-status').count(), 0);
