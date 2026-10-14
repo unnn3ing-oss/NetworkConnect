@@ -8,7 +8,7 @@ export default {
   requires: ['inventory'],
   async mount(el, ctx) {
     const card = document.createElement('div');
-    card.className = 'nc-card nc-stub';
+    card.className = 'card nc-stub';
     const h = document.createElement('h2');
     h.className = 'nc-card-title';
     h.textContent = '設備';

@@ -174,6 +174,26 @@ describe('前端 shell（Chromium）', async () => {
     }
   });
 
+  test('ctx.ui.load() 取得 web/ui 的匯出，元件可在 CSP 下正常運作', { skip: !browser && '找不到 Chromium' }, async () => {
+    const { page, problems, context } = await open('#/dashboard');
+    const names = await page.evaluate(async () => {
+      const { ctx } = window.__NC__;
+      const all = await ctx.ui.load();
+      const toastOnly = await ctx.ui.load('toast');
+      all.toast('測試訊息', { duration: 0 });
+      const ok = await ctx.ui.load('status-dot');
+      return { exports: Object.keys(all).sort(), sameToast: toastOnly.toast === all.toast, hasDot: typeof ok.createStatusDot };
+    });
+    for (const n of ['toast', 'confirm', 'createWizard', 'createGuide', 'createDrawer', 'createSegmented', 'createChips', 'createStatusDot', 'createEmpty', 'icon']) {
+      assert.ok(names.exports.includes(n), `ui/index.js 缺 ${n}`);
+    }
+    assert.equal(names.sameToast, true);
+    assert.equal(names.hasDot, 'function');
+    await page.waitForSelector('text=測試訊息');
+    assert.deepEqual(problems, []);
+    await context.close();
+  });
+
   test('手機寬度（390px）沒有水平捲動', { skip: !browser && '找不到 Chromium' }, async () => {
     const { page, context } = await open('#/devices');
     await page.setViewportSize({ width: 390, height: 800 });

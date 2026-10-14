@@ -124,15 +124,28 @@ describe('startServer：靜態檔案', () => {
     assert.match(r.headers['content-type'], /javascript/);
   });
 
-  test('尚不存在的 /ui/*.css（A1 產出）回 200 空樣式表，不讓 shell 出現 404', async () => {
+  test('.js/.mjs 以 text/javascript 送出，.css 以 text/css 送出（ES Module 才能載入）', async () => {
     const s = await boot();
-    const r = await get(`${s.url}/ui/not-there-yet.css`);
-    assert.equal(r.status, 200);
-    assert.match(r.headers['content-type'], /text\/css/);
+    for (const p of ['/app.js', '/ui/index.js', '/modules/devices/index.js']) {
+      const r = await get(`${s.url}${p}`);
+      assert.equal(r.status, 200, p);
+      assert.match(r.headers['content-type'], /^text\/javascript/, p);
+    }
+    const css = await get(`${s.url}/ui/tokens.css`);
+    assert.match(css.headers['content-type'], /^text\/css/);
   });
 
-  test('其他不存在的檔案仍是 404', async () => {
+  test('index.html 引用的所有樣式表與腳本都存在（不需要特例）', async () => {
     const s = await boot();
+    const html = (await get(`${s.url}/`)).text;
+    const refs = [...html.matchAll(/(?:href|src)="(\/[^"]+\.(?:css|js|svg))"/g)].map((m) => m[1]);
+    assert.ok(refs.length >= 6);
+    for (const ref of refs) assert.equal((await get(`${s.url}${ref}`)).status, 200, ref);
+  });
+
+  test('不存在的檔案是 404', async () => {
+    const s = await boot();
+    assert.equal((await get(`${s.url}/ui/not-there.css`)).status, 404);
     assert.equal((await get(`${s.url}/ui/not-there.js`)).status, 404);
     assert.equal((await get(`${s.url}/nope.html`)).status, 404);
   });

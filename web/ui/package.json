@@ -1,9 +1,3 @@
 {
-  "name": "networkconnect-ui-kit-tests",
-  "private": true,
-  "type": "module",
-  "description": "僅供 web/ui 單元測試使用；正式相依由根目錄 package.json 管理。",
-  "devDependencies": {
-    "jsdom": "29.1.1"
-  }
+  "type": "module"
 }

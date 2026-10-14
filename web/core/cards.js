@@ -14,7 +14,7 @@ function h(doc, tag, className, text) {
  */
 export function renderErrorCard(container, { title, message, error, onRetry }) {
   const doc = container.ownerDocument;
-  const card = h(doc, 'div', 'nc-card nc-error-card');
+  const card = h(doc, 'div', 'card nc-error-card');
   card.setAttribute('role', 'alert');
   card.append(h(doc, 'h2', 'nc-card-title', '此功能暫時無法載入'));
   card.append(h(doc, 'p', 'nc-card-text', `「${title}」發生問題，其他功能不受影響。`));
@@ -27,7 +27,7 @@ export function renderErrorCard(container, { title, message, error, onRetry }) {
     card.append(details);
   }
   if (onRetry) {
-    const btn = h(doc, 'button', 'btn nc-btn', '重試');
+    const btn = h(doc, 'button', 'btn small', '重試');
     btn.type = 'button';
     btn.addEventListener('click', onRetry);
     card.append(btn);

@@ -94,11 +94,6 @@ export async function startServer(opts = {}) {
   // ---- 核心 plugins ----
   installErrorHandler(app);
   app.setNotFoundHandler((req, reply) => {
-    const path_ = req.url.split('?')[0];
-    // A1 的 web/ui/*.css 可能尚未存在：回空樣式表，避免 shell 出現 404 console 錯誤
-    if (req.method === 'GET' && /^\/ui\/[\w.-]+\.css$/.test(path_)) {
-      return reply.type('text/css; charset=utf-8').send('/* web/ui 尚未提供此檔案 */\n');
-    }
     const { status, body } = toErrorResponse({ statusCode: 404 });
     body.error.message = '找不到資源';
     reply.code(status).send(body);
@@ -123,7 +118,15 @@ export async function startServer(opts = {}) {
   const ctx = { config, events, log, secrets, dataDir, mock, prober: mockServices?.prober, validate, startedAt, modules: { list: loader.list } };
 
   // ---- 靜態檔案（放最後；/api/* 的路由較具體，不受影響）----
-  await app.register(fastifyStatic, { root: WEB_DIR, prefix: '/', index: ['index.html'] });
+  await app.register(fastifyStatic, {
+    root: WEB_DIR,
+    prefix: '/',
+    index: ['index.html'],
+    // ES Module 要求 JavaScript MIME；統一以 text/javascript 送出 .js／.mjs
+    setHeaders(res, filePath) {
+      if (/\.m?js$/.test(filePath)) res.header('Content-Type', 'text/javascript; charset=utf-8');
+    },
+  });
 
   // ---- 啟動 ----
   let port;

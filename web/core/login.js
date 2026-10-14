@@ -16,14 +16,14 @@ export function showLogin(overlay, api, onSuccess) {
   };
 
   const backdrop = make('div', 'nc-login-backdrop');
-  const form = make('form', 'nc-card nc-login');
+  const form = make('form', 'card nc-login');
   form.setAttribute('aria-label', '登入');
-  const input = make('input', 'nc-input');
+  const input = make('input', 'input');
   input.type = 'password';
   input.required = true;
   input.autocomplete = 'current-password';
   input.setAttribute('aria-label', '存取密碼');
-  const submit = make('button', 'btn primary nc-btn', '登入');
+  const submit = make('button', 'btn primary', '登入');
   submit.type = 'submit';
   const error = make('p', 'nc-login-error');
   error.setAttribute('role', 'alert');

@@ -1,10 +1,8 @@
 // 測試用：建立 jsdom 並把需要的全域物件掛到 globalThis，元件模組只在呼叫時才碰 document。
-// jsdom 由 web/ui/package.json 提供（找不到再退回根目錄的 node_modules）。
+// jsdom 由根目錄 package.json 的 devDependencies 提供。
 import { createRequire } from 'node:module';
 
-const req = createRequire(new URL('../../../web/ui/package.json', import.meta.url));
-let JSDOM;
-try { ({ JSDOM } = req('jsdom')); } catch { ({ JSDOM } = createRequire(import.meta.url)('jsdom')); }
+const { JSDOM } = createRequire(import.meta.url)('jsdom');
 
 const dom = new JSDOM('<!doctype html><html><body></body></html>', { url: 'http://localhost/', pretendToBeVisual: true });
 const w = dom.window;

@@ -29,14 +29,14 @@ export function createFilterBar(container, { api, bus, filters, debounceMs = 200
   for (const key of Object.keys(SOURCES)) {
     const label = make('label', 'nc-field');
     const sr = make('span', 'nc-sr', LABELS[key].replace('全部', ''));
-    const select = make('select', 'nc-select');
+    const select = make('select', 'input pill');
     select.dataset.filter = key;
     select.addEventListener('change', () => onSelect(key, select.value));
     label.append(sr, select);
     inner.append(label);
     selects[key] = select;
   }
-  const search = make('input', 'nc-search');
+  const search = make('input', 'input pill nc-search');
   search.type = 'search';
   search.placeholder = '搜尋名稱、IP、MAC…';
   search.setAttribute('aria-label', '關鍵字');
@@ -45,7 +45,7 @@ export function createFilterBar(container, { api, bus, filters, debounceMs = 200
     clearTimeout(timer);
     timer = setTimeout(() => filters.set({ q: search.value }), debounceMs);
   });
-  const clear = make('button', 'btn nc-btn nc-clear', '清除篩選');
+  const clear = make('button', 'btn small nc-clear', '清除篩選');
   clear.type = 'button';
   clear.hidden = true;
   clear.addEventListener('click', () => filters.clear());

@@ -15,7 +15,7 @@
     "start": "node server/cli.js",
     "dev": "node --watch server/cli.js",
     "dev:mock": "node --watch server/cli.js --mock",
-    "test": "node --test \"test/unit/**/*.test.js\" \"test/contract/**/*.test.js\"",
+    "test": "node --test \"test/unit/**/*.test.js\" \"test/unit/ui/*.test.mjs\" \"test/contract/**/*.test.js\"",
     "test:e2e": "playwright test --config=test/e2e/playwright.config.js"
   },
   "dependencies": {
@@ -28,6 +28,7 @@
     "nanoid": "6.0.2"
   },
   "devDependencies": {
-    "@playwright/test": "1.64.0"
+    "@playwright/test": "1.64.0",
+    "jsdom": "29.1.1"
   }
 }

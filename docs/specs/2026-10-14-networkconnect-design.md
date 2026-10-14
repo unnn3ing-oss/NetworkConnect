@@ -132,7 +132,10 @@ export default {
 |---|---|---|
 | system | `GET /api/system/health` | `{ok, version, uptime}` |
 | system | `GET /api/system/modules` | 各模組 `{name, state: ok\|failed\|disabled, error?}` |
+| system | `GET/PUT /api/system/settings` | 讀寫 `lanAccess`、`port`、`modules`（存入 `config.json`）；回應帶 `restartRequired`，與目前執行中不同時為 true；不得讓所有功能模組同時停用 |
 | core/auth | `POST /api/auth/login`、`POST /api/auth/logout` | 選用的存取密碼（未設定則免登入） |
+| core/auth | `GET /api/auth/status` | `{enabled, authenticated}`，前端據此決定是否顯示登入畫面 |
+| core/auth | `PUT /api/auth/password` | 設定、變更或取消（`password:null`）存取密碼；已設定時需帶 `current` |
 | inventory | `GET/POST /api/floors`、`PATCH/DELETE /api/floors/:id` | 刪除樓層時若仍有房間或設備 → 409 |
 | inventory | `GET/POST /api/rooms`、`PATCH/DELETE /api/rooms/:id` | 同上 |
 | inventory | `GET/POST /api/groups`、`PATCH/DELETE /api/groups/:id` | 刪組別會從設備的 `groupIds` 移除 |

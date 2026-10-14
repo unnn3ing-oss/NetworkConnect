@@ -42,8 +42,9 @@ async function main() {
   const bus = createBus();
   const router = createRouter();
   const filters = createFilters({ router, bus });
-  // ctx.ui 刻意做成「用到才載入」：web/ui 的元件由 A1 提供，shell 不依賴它們也能啟動
-  const ui = { load: (name) => import(`/ui/${name}.js`) };
+  // ctx.ui.load()＝用到才載入 web/ui 的元件：load() 取得 /ui/index.js 的全部匯出（toast、confirm、createWizard…），
+  // load('toast') 則只載入單一檔案
+  const ui = { load: (name = 'index') => import(`/ui/${name}.js`) };
 
   const entries = await loadFrontModules();
   let backend = [];
@@ -138,7 +139,7 @@ async function main() {
   filterbar.refresh();
   router.start();
 
-  window.__NC__ = { api, bus, router, filters, entries };
+  window.__NC__ = { api, bus, router, filters, entries, ctx };
 }
 
 main().catch((err) => {

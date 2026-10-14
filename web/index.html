@@ -6,9 +6,10 @@
   <meta name="color-scheme" content="light dark">
   <title>NetworkConnect</title>
   <link rel="icon" href="/core/icon.svg" type="image/svg+xml">
-  <!-- web/ui 由 A1 提供；檔案尚未存在時伺服器回傳空樣式表，shell 仍可正常載入 -->
+  <!-- web/ui（A1 元件庫）的樣式；載入方式見 web/ui/README.md -->
   <link rel="stylesheet" href="/ui/tokens.css">
   <link rel="stylesheet" href="/ui/base.css">
+  <link rel="stylesheet" href="/ui/components.css">
   <link rel="stylesheet" href="/ui/guide.css">
   <link rel="stylesheet" href="/ui/wizard.css">
   <link rel="stylesheet" href="/core/shell.css">
@@ -17,7 +18,7 @@
   <a class="nc-skip" href="#nc-main">跳到主要內容</a>
 
   <header class="topbar nc-topbar">
-    <div class="nc-brand">
+    <div class="nc-brand brand">
       <img class="nc-logo" src="/core/icon.svg" alt="" width="24" height="24">
       <span class="nc-brand-name">NetworkConnect</span>
     </div>
