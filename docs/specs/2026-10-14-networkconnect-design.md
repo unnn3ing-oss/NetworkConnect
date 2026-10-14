@@ -4,7 +4,7 @@
 
 ## 0. 一句話
 
-在家中區網跑一台小主機，提供網頁介面：**手動登錄設備 → 自動畫架構圖 → 定時偵測連線狀態 → 在樓層平面圖上看到每台設備的位置與燈號 → 直接看 NVR 監視器畫面**，並可依樓層／房間／組別／類別篩選。
+在家中一台常開的 **Mac 或 Windows 電腦安裝桌面 App**（App 有自己的視窗，同時在區網開放同一套網頁給手機），提供：**手動登錄設備 → 自動畫架構圖 → 定時偵測連線狀態 → 在樓層平面圖上看到每台設備的位置與燈號 → 直接看 NVR 監視器畫面**，並可依樓層／房間／組別／類別篩選。
 
 ## 1. 範圍
 
@@ -17,15 +17,16 @@
 | F3 | 架構圖 | 依每台設備的「上游設備＋埠」自動畫樹狀拓樸，燈號同步連線狀態，可依樓層分群 |
 | F4 | 連線狀態 | 背景定時偵測（ICMP／TCP 埠／HTTP），連續 3 次失敗才判定離線；即時推播到前端 |
 | F5 | 樓層平面圖 | 每層樓上傳一張平面圖，把設備拖放到實際位置，可縮放平移，點燈號開設備資訊 |
-| F6 | NVR 監視畫面 | 精靈式設定 NVR（品牌模板＋測試快照），1／4／9／16 分割即時畫面，點兩下看主碼流 |
+| F6 | NVR 監視畫面 | 精靈式設定 NVR（品牌模板＋測試連線），1／4／9／16 分割即時畫面，點兩下看主碼流 |
 | F7 | 首次使用導覽 | 全螢幕導覽（同 QPT「全螢幕安裝教學」）：建樓層 → 平面圖 → 房間 → 設備 → NVR |
 | F8 | 備份 | 一鍵匯出／匯入 JSON（預設不含密碼） |
+| F9 | 桌面 App | macOS（Apple 晶片＋Intel）與 Windows 安裝檔；選單列／系統匣圖示、開機自動啟動、關鍵設備離線的系統通知、手機連線 QR Code |
 
 ### 不做（v1，列入 §12 後續）
 
 自動掃描網段、SNMP 流量、告警推播（LINE）、NVR 回放、房間多邊形繪製、PDF 平面圖、多使用者權限、外網直連。
 
-## 2. 為什麼一定要有「本地主機」
+## 2. 為什麼一定要有「本地程式」
 
 | 需求 | 純網頁（GitHub Pages／Apps Script）做得到嗎 | 原因 |
 |---|---|---|
@@ -33,46 +34,53 @@
 | 看 NVR 畫面 | ❌ | NVR 輸出 RTSP，瀏覽器不能直接播放，需要轉成 WebRTC／MSE |
 | 存帳密 | ❌ 不安全 | NVR 帳密不能出現在前端 |
 
-**結論**：架構為「區網小主機（Docker）＋ 瀏覽器前端」。舊專案 `visual-network-topology-dashboard`（Apps Script）只能做到靜態架構圖，這也是它無法擴充成狀態監測的根本原因。
+**結論**：一定要有一支在家中區網內執行的程式。採用**桌面 App（Electron）**：App 內啟動本地伺服器，視窗與手機瀏覽器看的是同一套網頁；不使用 Docker（Mac／Windows 的 Docker 無法直接存取區網）。舊專案 `visual-network-topology-dashboard`（Apps Script）只能做到靜態架構圖，這也是它無法擴充成狀態監測的根本原因。
 
 ## 3. 技術選型（已定案，實作時不再比較）
 
 | 層 | 選擇 | 版本規則 | 選它的理由 |
 |---|---|---|---|
-| 執行環境 | Node.js | 22 LTS | 與 hottopic 等既有專案一致；`node:test` 內建測試 |
+| 桌面外殼 | Electron | 選內建 Node ≥ 22 的穩定版，鎖確切版本 | 內含 Node，後端程式不用改寫即可放進 App；Mac／Windows 同一份程式碼 |
+| 執行環境 | Node.js（開發與測試用，版本與 Electron 內建的 Node 對齊，寫在 `.nvmrc`） | 22 LTS 以上 | 與 hottopic 等既有專案一致；`node:test` 內建測試；不使用原生模組，避免跨平台編譯問題 |
 | 後端框架 | Fastify | 5.x 鎖定次版號 | **plugin 封裝＝模組隔離**；路由直接吃 JSON Schema 驗證，契約即程式 |
 | 儲存 | JSON 檔（原子寫入）＋ Repository 介面 | — | 家用 < 300 台設備綽綽有餘；備份就是複製檔案；之後要換 SQLite 只改一個檔 |
-| 串流轉換 | go2rtc（sidecar 容器） | 鎖定確切版本（實作時取最新穩定版） | 單一執行檔，RTSP → MSE／WebRTC，自帶快照 API 與 ffmpeg |
+| 串流轉換 | go2rtc（App 內附執行檔，由 nvr 模組啟動） | 版本只寫在 `package.json` 的 `config.go2rtcVersion`（單一來源） | 單一執行檔、有 macOS arm64／x64 與 Windows x64 版，RTSP → MSE；**不內附 ffmpeg**（見 §8.4） |
 | 前端 | 原生 ES Modules，無建置步驟 | — | 與 QPT／hottopic 一致；agent 不需處理打包問題，試錯最少 |
 | 架構圖 | Cytoscape.js（vendored） | 鎖定確切版本 | 內建 `breadthfirst` 樹狀排版，不需額外外掛；canvas 繪製不違反 CSP |
 | 平面圖 | 自製（CSS transform＋pointer events） | — | 需求單純，不引入函式庫 |
-| 測試 | `node:test`、ajv（契約驗證）、Playwright（E2E） | Chromium 已預裝於 `/opt/pw-browsers` | |
-| 部署 | Docker Compose，`network_mode: host` | — | ICMP、ARP、連 NVR 都需要主機網路 |
+| 測試 | `node:test`、ajv（契約驗證）、Playwright（網頁 E2E＋`_electron` App 冒煙測試） | Chromium 已預裝於 `/opt/pw-browsers` | |
+| 打包 | electron-builder | 鎖確切版本 | macOS `.dmg`（arm64、x64 各一）、Windows NSIS `.exe`（x64，免系統管理員權限） |
+| CI | GitHub Actions | — | 雲端開發容器是 Linux，**Mac／Windows 的測試與打包一律在 Actions 的 macos／windows runner 上驗證** |
 
-**主機建議**：Linux 小主機／樹莓派 4 以上／支援 Docker 的 NAS。Windows／macOS 的 Docker 不支援 host network，若用 Windows 請改用 `npm start` 直接跑（go2rtc 用 Windows 執行檔）。
+**電腦建議**：一台常開、接有線網路的桌機或 Mac mini。**電腦睡眠時偵測會停止**；筆電闔上螢幕也會睡眠，不適合當主機。App 提供「偵測期間防止電腦閒置睡眠」選項。
+
+**無介面模式**：`npm start`（或 `node server/cli.js`）可在沒有 Electron 的情況下單獨啟動伺服器，供開發、測試，以及日後 Linux／NAS 版使用。
 
 ## 4. 系統架構
 
 ```
- 瀏覽器（手機／電腦，區網內）
-   │  HTTPS 或 HTTP :8080（同源）
-   ▼
-┌──────────────── NetworkConnect 主程式（Node／Fastify）────────────────┐
-│ core：config・store・events(SSE)・auth(存取密碼)・module-loader・static │
-│ ┌──────────┐┌─────────┐┌───────────┐┌─────────┐┌──────┐┌────────┐ │
-│ │inventory ││ monitor ││ floorplan ││   nvr   ││  io  ││ system │ │
-│ │設備/分類  ││狀態偵測  ││平面圖/落點 ││NVR/頻道  ││匯入出 ││健康/模組│ │
-│ └────┬─────┘└────┬────┘└─────┬─────┘└────┬────┘└──┬───┘└────────┘ │
-│      └───────────┴───── store（JSON Repository）──┘                │
-└───────────────────────────────────────┬────────────────────────────┘
-                                         │ 127.0.0.1:1984（只給主程式用）
-                                   ┌─────▼─────┐   RTSP   ┌──────┐
-                                   │  go2rtc   │◄────────►│ NVR  │
-                                   └───────────┘          └──────┘
-   monitor ──ICMP／TCP／HTTP──► 區網內各設備
+┌──────────────── NetworkConnect 桌面 App（Electron）──────────────────────┐
+│ 主行程 desktop/：視窗、選單列／系統匣、開機自動啟動、系統通知、QR Code     │
+│   │ utilityProcess.fork（伺服器當掉 → 主行程自動重啟，最多 3 次）          │
+│   ▼                                                                      │
+│ ┌─────────────── 伺服器 server/（Node／Fastify）──────────────────────┐ │
+│ │ core：config・store・events(SSE)・auth・module-loader・static       │ │
+│ │ ┌─────────┐┌───────┐┌─────────┐┌───────┐┌────┐┌──────┐            │ │
+│ │ │inventory││monitor││floorplan││  nvr  ││ io ││system│            │ │
+│ │ └────┬────┘└───┬───┘└────┬────┘└───┬───┘└─┬──┘└──────┘            │ │
+│ │      └─────────┴── store（JSON，存在系統使用者資料夾）               │ │
+│ └──────────────────────────────────────┬──────────────────────────────┘ │
+│                     nvr 模組啟動／關閉  │ 127.0.0.1:1984                  │
+│                                   ┌─────▼─────┐                          │
+│                                   │  go2rtc   │◄──── RTSP ────► NVR      │
+│                                   └───────────┘                          │
+└──────────────────────────────────────────────────────────────────────────┘
+   ▲ App 視窗：http://127.0.0.1:<port>        ▲ 手機：http://<電腦區網IP>:<port>
+   monitor ──ICMP（系統 ping）／TCP／HTTP──► 區網內各設備
 ```
 
-- 瀏覽器**只連主程式一個埠**。串流走 `/api/nvr/ws` 由主程式反向代理到 go2rtc，帳密只存在主機端。
+- App 視窗與手機**都只連伺服器一個埠**。串流走 `/api/nvr/ws` 由伺服器反向代理到 go2rtc，帳密只存在這台電腦。
+- 伺服器跑在 Electron 的 `utilityProcess`，與視窗分開：伺服器出錯不會讓視窗當掉，視窗關閉也不會停止偵測。
 - 前端與後端都採「**核心＋獨立模組**」：模組之間不互相 import，只透過 §6 的契約（REST、事件、路由連結）溝通。
 
 ## 5. 模組隔離規則（「改一個功能不影響其他功能」的具體做法）
@@ -86,7 +94,7 @@
 4. **故障隔離**：
    - 後端 module-loader 逐一 `import()` 並呼叫模組的 `check()`；失敗的模組標記為 `failed`，其他照常啟動，`GET /api/system/modules` 可看到原因。
    - 前端 shell 以 try/catch 包住每個模組的 `mount()`；失敗時該分頁顯示「此功能暫時無法載入」卡片，其他分頁不受影響。
-   - `data/config.json` 的 `modules` 可個別停用模組（例如 NVR 壞了先關掉）。
+   - 資料夾內 `config.json` 的 `modules` 可個別停用模組（例如 NVR 壞了先關掉）。
 5. **契約變更流程**：功能模組發現契約不夠用時，**停下來回報**（Change Request），不可自行修改契約或核心。
 
 ### 5.1 後端模組介面
@@ -139,8 +147,8 @@ export default {
 | floorplan | `GET /api/placements?floorId`、`PUT /api/placements/:deviceId`、`DELETE /api/placements/:deviceId` | 座標為 0–1 比例 |
 | nvr | `GET /api/nvr/templates` | 品牌 RTSP 模板 |
 | nvr | `GET/POST /api/nvrs`、`PATCH/DELETE /api/nvrs/:id` | 密碼為寫入專用，讀取只回 `hasPassword` |
-| nvr | `POST /api/nvrs/:id/test` | 取第 1 頻道快照，回傳成功與否 |
-| nvr | `GET /api/nvrs/:id/channels/:ch/snapshot.jpg` | |
+| nvr | `POST /api/nvrs/:id/test` | 短暫連線第 1 頻道子碼流，回傳 `{ok, codec, warning?}` |
+| nvr | `GET /api/nvr/status` | go2rtc 是否在執行、版本 |
 | nvr | `GET(WS) /api/nvr/ws?stream=<name>` | 反向代理 go2rtc 的 MSE WebSocket |
 | io | `GET /api/export?secrets=0`、`POST /api/import`、`POST /api/import/csv` | |
 | core | `GET /api/events` | SSE |
@@ -175,7 +183,7 @@ export default {
 | `placements` | floorplan | `deviceId, floorId, x(0–1), y(0–1)` |
 | `statusHistory` | monitor | `deviceId, samples:[{at, up, rttMs}]`（每台保留最近 1440 筆，環狀） |
 | `nvrs` | nvr | `id, deviceId?, name, brand, host, port, username, channelCount, streamMain, streamSub, channels:[{ch, name, deviceId?, enabled}]` |
-| `secrets`（獨立檔 `data/secrets.json`，權限 600） | nvr／core | `{ 'nvr:<id>': '<password>', 'auth': '<hash>' }` |
+| `secrets`（獨立檔 `secrets.json`，Mac 權限 600；Windows 位於使用者個人資料夾） | nvr／core | `{ 'nvr:<id>': '<password>', 'auth': '<hash>' }` |
 
 **唯一例外**：io 模組的「匯入」可透過 `store.restore(snapshot)` 整批覆寫所有 collection（先全部驗證、再一次寫入），完成後發 `inventory.changed`、`plan.changed`、`nvr.changed` 讓各模組重新載入。匯出 JSON 內含平面圖檔（base64）。
 
@@ -204,10 +212,19 @@ export default {
 
 - 狀態值：`up`、`down`、`unknown`（尚未檢查或檢查本身出錯）、`disabled`（method=none）。
 - 判定：成功一次即 `up`；**連續 3 次失敗**才 `down`（沿用 netwatch 規則）。
-- 方法：`icmp` 呼叫系統 `ping -c 1 -W 1`（容器需 `NET_RAW`）；`tcp` 連線指定埠，逾時 1500ms；`http` GET，狀態碼 < 500 視為 up。
+- 方法：`icmp` 呼叫系統 `ping`（三個平台參數與輸出不同，見下表）；`tcp` 連線指定埠，逾時 1500ms；`http` GET，狀態碼 < 500 視為 up。
 - 排程：每台依自己的 `intervalSec`（最小 15 秒），整體並發上限 16；每台加 0–20% 隨機延遲避免同時爆量。
 - 前端燈號：`critical:false` 的設備離線顯示灰色「離線」，`critical:true` 才顯示紅色警示。
 - 可測試性：prober 以依賴注入，測試用假 prober，不需真實網路。
+- **ping 跨平台規則**（已知地雷）：
+
+| 平台 | 指令 | 判斷成功 | 注意 |
+|---|---|---|---|
+| Windows | `ping -n 1 -w 1000 <ip>` | 輸出含 `TTL=` | **結束碼 0 不代表成功**：路由器回「目的地主機無法連線」時也回 0；輸出文字隨系統語言變化（中文為「時間=3ms」），延遲用 `[=<](\d+)ms` 擷取；`execFile` 加 `windowsHide:true` 避免閃黑窗 |
+| macOS | `ping -c 1 -W 1000 <ip>` | 結束碼 0 | **`-W` 單位是毫秒** |
+| Linux | `ping -c 1 -W 1 <ip>` | 結束碼 0 | `-W` 單位是秒 |
+
+- 以 `process.platform` 選擇參數，解析邏輯寫成純函式，三平台的真實輸出樣本放在測試 fixtures。
 
 ### 8.2 架構圖（topology）
 
@@ -244,12 +261,33 @@ export default {
   3. 分割畫面一律用子碼流，點兩下才切主碼流，避免頻寬與 NVR 連線數爆掉。
   4. 分頁隱藏（`visibilitychange`）或離開監視器頁時要關閉所有串流。
   5. iPhone Safari 不支援一般 MSE；使用 go2rtc 前端元件的自動回退機制，並列入實機手動驗證。
+  6. **go2rtc 單一執行檔不含 ffmpeg**，`/api/frame.jpeg` 快照無法使用。改為：測試連線由後端短暫開一個 MSE 串流（最多 8 秒），收到 codec 資訊即成功（`avc1`＝H.264、`hvc1`／`hev1`＝H.265）；畫面縮圖由前端從 `<video>` 擷取。
+  7. go2rtc 預設會在所有網卡開 RTSP（8554）與 WebRTC（8555），會觸發防火牆詢問並對區網暴露：設定檔必須關閉這兩者，API 只綁 `127.0.0.1:1984`。
+  8. Windows 結束父行程不會自動結束子行程：nvr 模組 `stop()` 必須結束 go2rtc，啟動時也要清掉上次殘留的 go2rtc（以 pid 檔判斷）。
 - 前端：分割 1／4／9／16，頻道名稱浮標，雙擊全螢幕；同時串流上限可設定（預設 9）。
-- 測試：用假 go2rtc（小型 HTTP 模擬伺服器）驗證註冊、快照、WS 代理；真實 NVR 由使用者依手動清單驗證。
+- go2rtc 生命週期由 nvr 模組管理：`start()` 依 `go2rtcPath` 啟動並產生設定檔，非預期結束時自動重啟（最多 3 次），`stop()` 結束。未提供 `go2rtcPath`（開發模式）時改連 `go2rtcUrl`。
+- 測試：用假 go2rtc（小型 HTTP／WS 模擬伺服器）驗證註冊、測試連線、WS 代理；真實 NVR 由使用者依手動清單驗證。
 
 ### 8.5 首次導覽（onboarding）
 
 資料庫為空時自動開啟，之後可從「設定」重新開啟。6 步：建立樓層 → 上傳平面圖（可略過）→ 建立房間 → 新增核心設備（數據機／路由器）→ 新增其他設備或匯入 CSV → 設定 NVR（可略過）。每步左側 SVG 示意動畫、右側說明與動作按鈕，按鈕開啟對應模組的精靈。
+
+### 8.6 桌面 App 外殼（desktop）
+
+- **啟動**：單一實例鎖（重複開啟時聚焦原視窗）→ 決定資料夾（`app.getPath('userData')/data`）→ `utilityProcess.fork` 伺服器，以環境變數傳入 `NC_DATA_DIR`、`NC_PORT`、`NC_HOST`、`NC_GO2RTC_PATH` → 等伺服器回報就緒（`process.parentPort` 訊息帶實際埠號）→ 開視窗載入 `http://127.0.0.1:<port>`。
+- **埠**：預設 8780，被佔用時自動往後找；實際埠號寫回 config，手機網址才會固定。
+- **區網開放**：設定中「允許手機在區網連線」預設開啟（綁 `0.0.0.0`），關閉時只綁 `127.0.0.1`。開啟時首次啟動導覽會提醒設定存取密碼。
+- **視窗行為**：關閉視窗＝隱藏到選單列／系統匣，偵測持續；Windows 第一次隱藏時跳一次說明通知。真正結束只能從選單「結束 NetworkConnect」。
+- **選單列／系統匣**：圖示顯示整體狀態（全部正常／有關鍵設備離線）；選單：開啟主控台、手機連線（顯示區網網址＋QR Code）、暫停偵測 30 分鐘、開機自動啟動（`app.setLoginItemSettings`）、防止電腦閒置睡眠（`powerSaveBlocker`）、檢查更新、結束。
+- **系統通知**：主行程訂閱伺服器的 `status.changed`，`critical:true` 的設備離線與恢復時發系統通知（同一台 5 分鐘內最多一次）。
+- **更新**：v1 不做自動更新（macOS 需付費簽章）；「檢查更新」查 GitHub Releases 最新版，有新版就開啟下載頁。
+- **安全**：視窗 `contextIsolation:true`、`nodeIntegration:false`、`sandbox:true`；只允許載入 `http://127.0.0.1:<port>`，其他網址一律用系統瀏覽器開啟；preload 只暴露 `ncDesktop.{version, platform, openExternal}`。
+- **已知地雷**：
+  1. **未簽章的安裝檔**：macOS 第一次開啟會被擋，需到「系統設定 → 隱私權與安全性 → 強制打開」（macOS 15 起不能再用右鍵開啟）；若顯示「已損毀」，執行 `xattr -cr /Applications/NetworkConnect.app`。Windows 會出現 SmartScreen，按「其他資訊 → 仍要執行」。這些步驟寫進 README，並做成全螢幕安裝教學。
+  2. **macOS 區域網路權限**（macOS 15 起）：App 第一次連區網設備時系統會詢問，`Info.plist` 必須有 `NSLocalNetworkUsageDescription`；使用者拒絕時 ping 全部失敗，App 要偵測並提示到「隱私權與安全性 → 區域網路」開啟。
+  3. **防火牆**：伺服器綁 `0.0.0.0` 時 macOS／Windows 防火牆會詢問一次，要允許才能用手機連線（寫進導覽）。
+  4. go2rtc 執行檔放在 `extraResources`，需保留可執行權限，並列入 macOS 簽章（含 ad-hoc）的檔案清單，否則 Apple 晶片無法執行。
+  5. 打包前用 `scripts/fetch-go2rtc.js` 依 `config.go2rtcVersion` 下載各平台執行檔並比對 sha256（寫在 `scripts/go2rtc-checksums.json`），不把執行檔放進 git。
 
 ## 9. 目錄結構與所有權
 
@@ -283,8 +321,13 @@ NetworkConnect/
 │  ├─ unit/<module>/   各模組自己的
 │  ├─ contract/        A0 建立框架，各模組補自己的案例
 │  └─ e2e/             C1
-├─ deploy/             A0   Dockerfile、docker-compose.yml、go2rtc.yaml
-├─ data/               （gitignore）db.json、secrets.json、config.json、uploads/
+├─ desktop/            D1   Electron 主行程、preload、選單列／系統匣、通知、圖示
+├─ scripts/            D1   fetch-go2rtc.js、go2rtc-checksums.json
+├─ electron-builder.yml D1
+├─ .github/workflows/  D1   ci.yml（三平台測試）、release.yml（打包）
+├─ data/               （gitignore）開發用資料夾；App 實際資料在系統使用者資料夾：
+│                           macOS `~/Library/Application Support/NetworkConnect/data`
+│                           Windows `%APPDATA%\NetworkConnect\data`
 └─ docs/
 ```
 
@@ -306,22 +349,23 @@ NetworkConnect/
 
 ## 11. 安全
 
-- 只在區網提供服務；**不建議路由器開 port**，要外出查看請用 Tailscale 等 VPN。
+- 只在區網提供服務（可關閉，只給本機視窗用）；**不建議路由器開 port**，要外出查看請用 Tailscale 等 VPN。
 - 可選「存取密碼」（scrypt 雜湊、HttpOnly cookie）；有設 NVR 時，設定頁會提示建議開啟。
-- go2rtc API 只綁 `127.0.0.1`。
-- NVR 密碼只存在 `data/secrets.json`，API 永不回傳；匯出預設不含密碼。
+- go2rtc API 只綁 `127.0.0.1`，RTSP／WebRTC 對外監聽一律關閉。
+- Electron 視窗安全設定見 §8.6。
+- NVR 密碼只存在 `secrets.json`，API 永不回傳；匯出預設不含密碼。
 - CSP：`default-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; style-src 'self'; connect-src 'self'`。
 
 ## 12. 後續版本（Backlog）
 
-自動掃描網段（ARP）建議新增、Zyxel／交換器 SNMP 流量、LINE 離線告警、NVR 回放、房間多邊形與熱區、PDF 平面圖、SQLite 儲存、多使用者。
+自動掃描網段（ARP）建議新增、Zyxel／交換器 SNMP 流量、LINE 離線告警、NVR 回放、房間多邊形與熱區、PDF 平面圖、SQLite 儲存、多使用者、**付費程式碼簽章與自動更新**、Linux／NAS 無介面版（Docker）、Windows ARM 版。
 
 ## 13. 待你確認（不阻擋開工，先用預設值）
 
 | # | 問題 | 預設 |
 |---|---|---|
 | Q1 | NVR 品牌／型號 | 先做 §8.4 四個模板＋自訂 |
-| Q2 | 主機用什麼跑 | Linux 小主機／樹莓派 Docker；Windows 用 `npm start` |
+| Q2 | 主機用什麼跑 | ✅ 已定案：桌面 App，Mac 與 Windows 都支援 |
 | Q3 | 是否需要外網看監視器 | 不開放，建議 Tailscale |
 | Q4 | 設備規模 | < 300 台 |
 | Q5 | 舊 Google Sheet 設備清單要不要匯入 | 提供 CSV 匯入 |

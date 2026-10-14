@@ -25,8 +25,8 @@
    - 停用 nvr 模組後其他頁面全部正常
    - 手機 390×844 主要流程可操作
    - 全程無 `pageerror`、無原生對話框、無 CSP 違規
-5. **README.md**：功能介紹、硬體需求、Docker 安裝（Linux）、Windows `npm start` 路徑、go2rtc 說明、NVR 子碼流設 H.264 提醒、Tailscale 外出查看建議、備份方式。
-6. **docs/manual-checklist.md**：使用者在家實機驗證清單（真實 ping、手機休眠設備、每個 NVR 品牌、iPhone Safari、9 路同看的 CPU／頻寬、深色模式、斷電重開機後自動恢復）。
+5. **README.md**：功能介紹、電腦需求（常開、有線網路）、Mac 與 Windows 安裝步驟（含未簽章的放行方式，對應規格 §8.6 地雷 1–3）、手機連線方式、開發者用 `npm start`、NVR 子碼流設 H.264 提醒、Tailscale 外出查看建議、備份方式。
+6. **docs/manual-checklist.md**：使用者在家實機驗證清單（Mac 與 Windows 各一輪：安裝放行、區域網路權限、防火牆、開機自動啟動、關視窗後持續偵測、系統通知、睡眠恢復、結束後無殘留 go2rtc；真實 ping、手機休眠設備、每個 NVR 品牌、iPhone Safari、9 路同看的 CPU／頻寬、深色模式、斷電重開機後自動恢復）。
 
 ## 驗收
 `npm test` 與 `npm run test:e2e` 全綠，並附上 E2E 摘要輸出。
