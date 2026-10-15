@@ -103,6 +103,8 @@ describe('devices 頁（Chromium）', async () => {
     const { page, problems } = await boot();
     await page.waitForSelector('.dv-card');
     const dot = (id) => page.locator(`.dv-card[data-id="${id}"] .nc-status`);
+    // 卡片與狀態是兩個請求，卡片先出現時狀態可能還沒到，先等狀態套用再斷言
+    await page.waitForFunction(() => document.querySelector('.dv-card[data-id="dev_router"] .nc-status')?.dataset.state === 'up');
     assert.equal(await dot('dev_router').getAttribute('data-state'), 'up');
     assert.equal(await dot('dev_printer').getAttribute('data-state'), 'offline'); // 非關鍵設備離線：灰色「離線」
     assert.equal(await dot('dev_swcore').getAttribute('data-state'), 'unknown'); // 沒有資料 → 未知
