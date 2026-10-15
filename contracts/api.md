@@ -154,7 +154,7 @@ inventory 在 `start()`／首次載入時，若 `categories` 為空，以 `contr
 | `PATCH /api/nvrs/:id` | `NvrPatch`（`password` 字串＝更新、`null`＝刪除、省略＝不變） | 200 `NvrPublic`；發 `nvr.changed` | 400、404 |
 | `DELETE /api/nvrs/:id` | — | 204；同時刪除密碼；發 `nvr.changed` | 404 |
 | `POST /api/nvrs/:id/test` | `NvrTestRequest` `{channel?: 1}` | 200 `NvrTestResult` `{ok, codec?, warning?, error?}`：短暫連線該頻道**子碼流**（最多 8 秒），收到 codec 即 `ok:true`；`hvc1`／`hev1` 時 `codec:"h265"` 並帶 `warning`；串流失敗為 `ok:false`＋`error` | 404；502 `UPSTREAM`（go2rtc 本身不可用） |
-| `GET /api/nvr/status` | — | 200 `NvrStatus` `{running, version, mode?}` | — |
+| `GET /api/nvr/status` | — | 200 `NvrStatus` `{running, version, mode?, streams?}`（`streams` 為已註冊串流數，未連線時省略） | — |
 | `GET /api/nvr/ws?stream=<name>`（WebSocket） | query `stream`：`nvr_<id>_<ch>_(main\|sub)` | 反向代理 go2rtc 的 MSE WebSocket（二進位與文字訊息原樣轉送） | 串流名稱不存在或 NVR 不存在：伺服器以 close code 4404 關閉 |
 
 URL 範本與佔位符見 `Template.urlTemplate`；`{u}`、`{p}` 代入前必須 `encodeURIComponent`。

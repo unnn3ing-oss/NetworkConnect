@@ -1,0 +1,147 @@
+/* cameras 模組樣式：只使用 web/ui 的 token 與基礎 class；不使用行內樣式（CSP style-src 'self'）。 */
+
+.cam { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.cam-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.cam-title { margin: 0; font-size: 22px; }
+.cam-grow { flex: 1 1 auto; }
+.cam-muted { color: var(--muted); font-size: 13px; }
+.cam-error { color: var(--danger); }
+.cam-limit { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+.cam-limit-input { width: 72px; padding-block: 6px; text-align: center; }
+
+/* ---- 提示列 ---- */
+.cam-notices { display: flex; flex-direction: column; gap: 8px; }
+.cam-notices:empty { display: none; }
+.cam-notice {
+  display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: var(--radius-s);
+  border: 1px solid var(--border); background: var(--surface);
+}
+.cam-notice.warn { background: var(--warn-soft); border-color: var(--warn); color: var(--warn-fg); }
+.cam-notice.info { background: var(--accent-soft); }
+.cam-notice-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; font-size: 14px; }
+
+/* ---- 版面：左側頻道清單＋右側畫面牆 ---- */
+.cam-body { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 16px; align-items: start; }
+.cam.side-closed .cam-body { grid-template-columns: minmax(0, 1fr); }
+.cam.side-closed .cam-side { display: none; }
+.cam-side[hidden] { display: none; }
+.cam-body:has(.cam-side[hidden]) { grid-template-columns: minmax(0, 1fr); }
+.cam-main { min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+
+.cam-side { display: flex; flex-direction: column; gap: 14px; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-m); background: var(--surface); }
+.cam-side:empty { display: none; }
+.cam-side-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; font-size: 14px; }
+.cam-side-actions { display: inline-flex; gap: 8px; }
+.cam-link { border: 0; background: none; padding: 0; color: var(--accent); font: inherit; font-size: 12px; cursor: pointer; }
+.cam-link:hover { text-decoration: underline; }
+.cam-check-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.cam-check { display: flex; align-items: center; gap: 8px; padding: 4px 2px; cursor: pointer; font-size: 14px; }
+.cam-check input { flex: none; }
+.cam-check-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cam-check-ch { color: var(--muted); font-size: 11px; }
+
+/* ---- 畫面牆 ---- */
+.cam-grid { display: grid; gap: 8px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.cam-grid[data-cols="1"] { grid-template-columns: minmax(0, 1fr); }
+.cam-grid[data-cols="2"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.cam-grid[data-cols="3"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.cam-grid[data-cols="4"] { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.cam-grid > .nc-empty { grid-column: 1 / -1; }
+
+.cam-tile {
+  position: relative; aspect-ratio: 16 / 9; min-width: 0; overflow: hidden; border-radius: var(--radius-s);
+  background: #0b1020; color: #fff; border: 1px solid var(--border);
+}
+.cam-tile-empty { background: var(--track); border-style: dashed; }
+.cam-tile:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.cam-video { position: absolute; inset: 0; }
+.cam-video .cam-player, .cam-player { display: block; width: 100%; height: 100%; }
+.cam-player video { width: 100%; height: 100%; object-fit: contain; background: #000; }
+
+.cam-tile-label {
+  position: absolute; left: 0; right: 0; top: 0; z-index: 2; display: flex; align-items: center; gap: 8px; padding: 6px 8px;
+  background: linear-gradient(#000a, #0000); pointer-events: none; font-size: 13px;
+}
+.cam-tile-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; text-shadow: 0 1px 2px #000; }
+.cam-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--st-unknown); }
+.cam-tile[data-state="live"] .cam-dot { background: var(--st-up); }
+.cam-tile[data-state="error"] .cam-dot { background: var(--st-down); }
+.cam-tile[data-state="limited"] .cam-dot, .cam-tile[data-state="paused"] .cam-dot, .cam-tile[data-state="idle"] .cam-dot { background: var(--st-disabled); }
+.cam-icon-btn {
+  pointer-events: auto; flex: none; display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px;
+  border: 0; border-radius: 50%; background: #0008; color: #fff; cursor: pointer;
+}
+.cam-icon-btn:hover { background: #000b; }
+
+.cam-tile-overlay {
+  position: absolute; inset: 0; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  padding: 36px 12px 12px; text-align: center; font-size: 13px; background: #0b1020cc;
+}
+.cam-tile-overlay[hidden] { display: none; }
+.cam-tile[data-state="live"] .cam-tile-overlay { display: none; }
+.cam-tile-msg { max-width: 100%; overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; line-clamp: 4; overflow: hidden; }
+.cam-tile[data-state="error"] .cam-tile-msg { color: #ffb4b4; }
+.cam-tile .cam-retry, .cam-full .cam-retry { pointer-events: auto; background: #fff; color: #0b1020; border-color: transparent; }
+
+.cam-pager { display: flex; align-items: center; justify-content: center; gap: 12px; }
+.cam-pager-text { color: var(--muted); font-size: 13px; }
+
+/* ---- 全螢幕（主碼流） ---- */
+html.cam-full-open { overflow: hidden; }
+.cam-full {
+  position: fixed; inset: 0; z-index: 150; display: flex; flex-direction: column; background: #05080f; color: #fff; outline: none;
+}
+.cam-full-bar { position: relative; z-index: 2; display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: #0009; }
+.cam-full-bar .cam-muted { color: #b8c3dc; }
+.cam-full .cam-video { top: 52px; }
+.cam-full .cam-tile-overlay { top: 52px; padding-top: 12px; }
+.cam-full[data-state="live"] .cam-tile-overlay { display: none; }
+.cam-full[data-state="error"] .cam-tile-msg { color: #ffb4b4; }
+
+/* ---- 精靈 ---- */
+.cam-wz-note { margin: 0; font-size: 14px; }
+.cam-wz-form { display: flex; flex-direction: column; gap: 12px; }
+.cam-wz-preview { display: block; padding: 8px 10px; border-radius: var(--radius-s); background: var(--track); font-family: var(--font-mono); font-size: 12px; overflow-wrap: anywhere; }
+.cam-wz-guide { align-self: flex-start; justify-self: start; width: auto; }
+.cam-wz-warn { margin: 0; padding: 8px 12px; border-radius: var(--radius-s); background: var(--warn-soft); color: var(--warn-fg); font-size: 14px; }
+.cam-test-status { display: flex; flex-direction: column; gap: 2px; padding: 10px 14px; border-radius: var(--radius-s); border: 1px solid var(--border); background: var(--surface-2); font-size: 14px; }
+.cam-test-status.ok { background: var(--ok-soft); border-color: var(--ok); }
+.cam-test-status.warn { background: var(--warn-soft); border-color: var(--warn); color: var(--warn-fg); }
+.cam-test-status.error { background: var(--danger-soft); border-color: var(--danger); }
+.cam-test-media { display: flex; flex-wrap: wrap; gap: 12px; }
+.cam-test-video { position: relative; width: 240px; aspect-ratio: 16 / 9; border-radius: var(--radius-s); background: #0b1020; overflow: hidden; }
+.cam-test-video:empty { display: none; }
+.cam-test-thumb[hidden] { display: none; }
+.cam-thumb { display: block; max-width: 240px; width: 100%; border-radius: var(--radius-s); border: 1px solid var(--border); }
+.cam-test-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.cam-table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-s); }
+.cam-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.cam-table th, .cam-table td { padding: 6px 8px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.cam-table thead th { color: var(--muted); font-size: 12px; font-weight: 600; background: var(--track); }
+.cam-table tbody tr:last-child > * { border-bottom: 0; }
+.cam-ch-no { color: var(--muted); font-size: 12px; white-space: nowrap; }
+.cam-ch-device { min-width: 160px; }
+.cam-guide-list { margin: 8px 0 0; padding-left: 18px; font-size: 14px; }
+
+/* ---- NVR 管理 ---- */
+.cam-mgr { display: flex; flex-direction: column; gap: 14px; }
+.cam-mgr-list { display: flex; flex-direction: column; gap: 10px; }
+.cam-mgr-item { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 12px 14px; }
+.cam-mgr-main { flex: 1 1 200px; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.cam-mgr-actions { display: inline-flex; gap: 8px; }
+
+/* ---- 窄螢幕 ---- */
+@media (max-width: 860px) {
+  .cam-body { grid-template-columns: minmax(0, 1fr); }
+  .cam-grid[data-cols="3"], .cam-grid[data-cols="4"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cam-tile-label { font-size: 12px; padding: 4px 6px; }
+  .cam-tile-overlay { padding: 28px 6px 6px; font-size: 11px; gap: 4px; }
+  .cam-tile-msg { -webkit-line-clamp: 3; line-clamp: 3; }
+}
+@media (max-width: 520px) {
+  .cam-grid[data-split="4"], .cam-grid[data-split="9"], .cam-grid[data-split="16"] { gap: 4px; }
+  .cam-tile .cam-retry { padding: 2px 10px; font-size: 11px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cam-tile, .cam-icon-btn { transition: none; }
+}
