@@ -6,8 +6,8 @@ import { validation } from '../../core/errors.js';
 const pkg = JSON.parse(fs.readFileSync(new URL('../../../package.json', import.meta.url), 'utf8'));
 
 const pick = (c) => ({ lanAccess: c.lanAccess, port: c.port, modules: { ...c.modules } });
-const sameSettings = (a, b) =>
-  a.lanAccess === b.lanAccess && a.port === b.port && Object.keys(a.modules).every((k) => a.modules[k] === b.modules[k]);
+const sameSettings = (a, b, { ignoreLan = false } = {}) =>
+  (ignoreLan || a.lanAccess === b.lanAccess) && a.port === b.port && Object.keys(a.modules).every((k) => a.modules[k] === b.modules[k]);
 
 export default {
   name: 'system',
@@ -27,9 +27,13 @@ export default {
     // 設定：讀寫 <dataDir>/config.json 的 lanAccess、port、modules。
     // 這三項在伺服器啟動時才套用，所以與「啟動當下儲存的值」不同時 restartRequired 為 true。
     const atStart = pick(loadConfig(ctx.dataDir));
+    // 桌面 App 以環境變數決定監聽位址時，lanAccess 由 App 的選單列／系統匣設定控制，這裡的值不影響也不算「需要重新啟動」
+    const managed = Boolean(ctx.lanAccessManaged);
     const view = () => {
       const saved = pick(loadConfig(ctx.dataDir));
-      return { ...saved, restartRequired: !sameSettings(saved, atStart) };
+      const out = { ...saved, restartRequired: !sameSettings(saved, atStart, { ignoreLan: managed }) };
+      if (managed) out.lanAccessManaged = true;
+      return out;
     };
 
     app.get('/api/system/settings', async () => view());

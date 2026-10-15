@@ -41,7 +41,7 @@ export function resolveDataDir(userDataPath, platform = process.platform) {
  * 預設不傳 NC_PORT：伺服器自行使用 config.port（8780）並在被佔用時往後找、寫回 config。
  * 只有使用者在 desktop-settings 指定埠，或外部（例如冒煙測試）已設定 NC_PORT 時才傳。
  */
-export function buildServerEnv({ baseEnv, dataDir, lanAccess, go2rtcPath, port }) {
+export function buildServerEnv({ baseEnv, dataDir, lanAccess, go2rtcPath, port, desktopToken }) {
   const env = {
     ...baseEnv,
     NC_DATA_DIR: dataDir,
@@ -49,5 +49,6 @@ export function buildServerEnv({ baseEnv, dataDir, lanAccess, go2rtcPath, port }
     NC_GO2RTC_PATH: go2rtcPath ?? '',
   };
   if (port !== null && port !== undefined) env.NC_PORT = String(port);
+  if (desktopToken) env.NC_DESKTOP_TOKEN = desktopToken; // 主行程呼叫 API 用，視同已登入
   return env;
 }

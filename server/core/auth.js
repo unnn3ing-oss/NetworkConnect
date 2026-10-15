@@ -32,7 +32,13 @@ export async function verifyPassword(password, stored) {
 
 const PUBLIC_API = (path) => path === '/api/system/health' || path.startsWith('/api/auth/');
 
-export function createAuth({ secrets, validate, now = Date.now, sessionMs = 30 * 24 * 3600 * 1000, failDelayMs = 400 }) {
+export const DESKTOP_TOKEN_HEADER = 'x-nc-desktop-token';
+
+/**
+ * desktopToken：桌面 App 主行程啟動伺服器時以 NC_DESKTOP_TOKEN 傳入的隨機值；主行程呼叫 API 時帶在
+ * x-nc-desktop-token 標頭，視同已登入（系統匣狀態、暫停偵測、通知查詢不必依賴視窗的登入 cookie）。
+ */
+export function createAuth({ secrets, validate, now = Date.now, sessionMs = 30 * 24 * 3600 * 1000, failDelayMs = 400, desktopToken = '' }) {
   const isEnabled = () => secrets.has('auth');
 
   const sign = (exp) => crypto.createHmac('sha256', secrets.get('auth:key') ?? '').update(String(exp)).digest('hex');
@@ -49,7 +55,15 @@ export function createAuth({ secrets, validate, now = Date.now, sessionMs = 30 *
     const got = Buffer.from(mac);
     return expected.length === got.length && crypto.timingSafeEqual(expected, got);
   }
-  const isAuthenticated = (req) => !isEnabled() || tokenValid(req.cookies?.[COOKIE]);
+  const desktopTokenValid = (req) => {
+    if (typeof desktopToken !== 'string' || desktopToken.length < 32) return false;
+    const got = req.headers?.[DESKTOP_TOKEN_HEADER];
+    if (typeof got !== 'string') return false;
+    const a = Buffer.from(got);
+    const b = Buffer.from(desktopToken);
+    return a.length === b.length && crypto.timingSafeEqual(a, b);
+  };
+  const isAuthenticated = (req) => !isEnabled() || desktopTokenValid(req) || tokenValid(req.cookies?.[COOKIE]);
 
   const setSessionCookie = (reply) =>
     reply.setCookie(COOKIE, makeToken(), { httpOnly: true, sameSite: 'lax', path: '/', maxAge: Math.floor(sessionMs / 1000) });

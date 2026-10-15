@@ -135,6 +135,10 @@
         "restartRequired": {
           "type": "boolean",
           "description": "儲存的設定（lanAccess、port、modules）與目前執行中的不同，需要重新啟動才會生效"
+        },
+        "lanAccessManaged": {
+          "type": "boolean",
+          "description": "選填，只在 true 時出現：監聽位址由環境變數（桌面 App 的 NC_HOST）決定，lanAccess 要到桌面 App 的選單列／系統匣切換"
         }
       }
     },

@@ -129,7 +129,7 @@ export function locationLabel(device, floors, rooms) {
 export const WIZARD_STEP_IDS = Object.freeze(['category', 'basic', 'location', 'link', 'monitor', 'confirm']);
 
 /** 新增設備的初始狀態（表單欄位一律是字串，送出時才轉型） */
-export function newWizardState({ categories = [], categoryId = '', floorId = '', roomId = '' } = {}) {
+export function newWizardState({ categories = [], categoryId = '', floorId = '', roomId = '', defaultIntervalSec = 60 } = {}) {
   const category = categories.find((c) => c.id === categoryId);
   const m = monitorDefaults(category);
   return {
@@ -138,7 +138,7 @@ export function newWizardState({ categories = [], categoryId = '', floorId = '',
     name: '', code: '', ip: '', mac: '', vendor: '', model: '', hostname: '', notes: '',
     floorId, roomId, groupIds: [],
     uplinkId: '', uplinkPort: '', localPort: '', medium: 'ethernet', speed: '',
-    monitorMethod: m.method, monitorPort: '', monitorPath: '/', intervalSec: '60', critical: m.critical,
+    monitorMethod: m.method, monitorPort: '', monitorPath: '/', intervalSec: String(defaultIntervalSec), critical: m.critical,
     monitorTouched: false,
   };
 }

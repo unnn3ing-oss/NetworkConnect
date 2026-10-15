@@ -322,13 +322,13 @@ describe('startServer：Electron utilityProcess（process.parentPort）', () => 
   test('status.changed 轉送時附上設備名稱與 critical（不需登入）', async () => {
     const parentPort = fakeParentPort();
     const s = await boot({ parentPort, exit: () => {}, mock: true }); // mock 模式有範例設備
-    const dev = (await s.store.collection('devices').list())[0];
-    assert.ok(dev, 'mock 資料應有設備');
+    const dev = (await s.store.collection('devices').list()).find((d) => d.monitor?.critical === true);
+    assert.ok(dev, 'mock 資料應有關鍵設備');
     const at = '2000-01-01T00:00:00.000Z'; // 用特殊時間辨識，避免與 mock 偵測自己發的事件混淆
     s.events.emit('status.changed', { deviceId: dev.id, from: 'up', to: 'down', rttMs: null, at });
     const mine = () => parentPort.sent.find((m) => m.payload?.at === at);
     await waitFor(() => mine());
-    assert.deepEqual(mine().payload.device, { name: dev.name, critical: Boolean(dev.critical) });
+    assert.deepEqual(mine().payload.device, { name: dev.name, critical: dev.monitor?.critical === true });
   });
 
   test('收到 {type:"shutdown"}（Electron 以 {data} 包裝）時 stop() 後呼叫 exit', async () => {

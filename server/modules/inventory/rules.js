@@ -86,9 +86,9 @@ export function filterDevices(devices, { floorId, roomId, groupId, categoryId, q
 export const MONITOR_DEFAULTS = Object.freeze({ port: null, path: '/', intervalSec: 60, critical: false });
 export const UPLINK_DEFAULTS = Object.freeze({ port: '', localPort: '', speed: '' });
 
-/** 偵測設定補齊：method 缺省時取類別的 defaultMonitor */
-export function fillMonitor(monitor, category) {
-  return { method: category?.defaultMonitor ?? 'icmp', ...MONITOR_DEFAULTS, ...(monitor ?? {}) };
+/** 偵測設定補齊：method 缺省時取類別的 defaultMonitor；intervalSec 缺省時取設定頁的預設偵測間隔 */
+export function fillMonitor(monitor, category, defaultIntervalSec = MONITOR_DEFAULTS.intervalSec) {
+  return { method: category?.defaultMonitor ?? 'icmp', ...MONITOR_DEFAULTS, intervalSec: defaultIntervalSec, ...(monitor ?? {}) };
 }
 
 export function fillUplink(uplink) {
@@ -96,7 +96,7 @@ export function fillUplink(uplink) {
 }
 
 /** 由使用者輸入（DeviceCreate）建出完整的儲存紀錄 */
-export function buildDevice(input, { id, category, now }) {
+export function buildDevice(input, { id, category, now, defaultIntervalSec }) {
   return {
     id,
     code: input.code ?? '',
@@ -111,7 +111,7 @@ export function buildDevice(input, { id, category, now }) {
     vendor: input.vendor ?? '',
     model: input.model ?? '',
     uplink: fillUplink(input.uplink),
-    monitor: fillMonitor(input.monitor, category),
+    monitor: fillMonitor(input.monitor, category, defaultIntervalSec),
     notes: input.notes ?? '',
     createdAt: now,
     updatedAt: now,

@@ -233,7 +233,7 @@ async function mount(el, ctx) {
         return [
           h('p', { text: '有網路攝影機錄影主機（NVR）的話，可以在這裡同時查看多路即時畫面。精靈會幫你測試連線。' }),
           statusLine(data.nvrs.length > 0, data.nvrs.length ? `已設定 ${data.nvrs.length} 台 NVR` : '還沒有 NVR'),
-          h('div', { class: 'ob-actions' }, goBtn('設定 NVR', '#/cameras', { action: 'setup-nvr' })),
+          h('div', { class: 'ob-actions' }, goBtn('設定 NVR', '#/cameras?new=1', { action: 'setup-nvr' })),
           h('p', { class: 'nc-tip', text: '這一步可以略過。建議把 NVR 的子碼流設成 H.264，瀏覽器才能順暢播放。' }),
         ];
       },

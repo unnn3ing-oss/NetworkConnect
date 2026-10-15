@@ -1,6 +1,6 @@
 // 從伺服器 REST API 取得「系統匣圖示狀態」與「通知所需的設備資料」。
 // status.changed 事件只帶 {deviceId, from, to, rttMs, at}，沒有 critical 與名稱，所以主行程要自己查。
-// fetch 由呼叫端注入：正式環境使用視窗 session 的 fetch（帶著登入後的 cookie，設了存取密碼也能查）。
+// fetch 由呼叫端注入：正式環境帶著桌面 App 啟動伺服器時給的 x-nc-desktop-token（設了存取密碼、視窗沒登入也能查）。
 
 /**
  * @param {{devices: Array<{id: string, name?: string, monitor?: {critical?: boolean}}>, statuses: Array<{deviceId: string, state: string}>}} data

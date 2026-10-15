@@ -4,6 +4,7 @@
 import { nanoid } from 'nanoid';
 import { readSeed } from '../../../contracts/index.js';
 import { conflict, cycle, notFound, validation } from '../../core/errors.js';
+import { readDefaultIntervalSec } from '../../core/monitor-defaults.js';
 import { buildDevice, downstreamIds, fillMonitor, fillUplink, filterDevices, findUplinkCycle, naturalCompare, sortDevices } from './rules.js';
 
 const DEFAULT_GROUP_COLOR = '#64748b';
@@ -257,7 +258,7 @@ export default {
         const body = ctx.validate('api-inventory#DeviceCreate', req.body);
         const category = await col('categories').get(body.categoryId);
         if (!category) throw validation('設備類別不存在', { categoryId: body.categoryId });
-        const device = buildDevice(body, { id: newId('dev'), category, now: nowIso() });
+        const device = buildDevice(body, { id: newId('dev'), category, now: nowIso(), defaultIntervalSec: readDefaultIntervalSec(ctx.dataDir) });
         const byId = await devicesById();
         await checkDevice(device, new Set(Object.keys(device)), byId);
         const saved = await col('devices').insert(device);
@@ -280,7 +281,7 @@ export default {
         const next = { ...existing, ...body };
         if ('groupIds' in body) next.groupIds = [...body.groupIds];
         if ('uplink' in body) next.uplink = fillUplink(body.uplink);
-        if ('monitor' in body) next.monitor = fillMonitor(body.monitor, await col('categories').get(next.categoryId));
+        if ('monitor' in body) next.monitor = fillMonitor(body.monitor, await col('categories').get(next.categoryId), readDefaultIntervalSec(ctx.dataDir));
         next.updatedAt = nowIso();
         await checkDevice(next, new Set(Object.keys(body)), await devicesById());
         const saved = await col('devices').update(existing.id, next);

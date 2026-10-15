@@ -14,9 +14,9 @@ afterEach(async () => {
 
 const v = createValidator();
 
-async function boot() {
+async function boot({ env = {}, useEnvHost = false } = {}) {
   const dataDir = makeTmpDir();
-  const s = await startServer({ dataDir, port: 0, host: '127.0.0.1', env: {} });
+  const s = await startServer({ dataDir, port: 0, env, ...(useEnvHost ? {} : { host: '127.0.0.1' }) });
   running.push(s);
   const call = async (method, url, body) => {
     const res = await fetch(`${s.url}${url}`, {
@@ -40,6 +40,16 @@ describe('GET/PUT /api/system/settings', () => {
       restartRequired: false,
     });
     v.assert('api-system#Settings', r.json);
+  });
+
+  test('監聽位址由 NC_HOST 決定（桌面 App）：回 lanAccessManaged:true，改 lanAccess 不算需要重新啟動', async () => {
+    const { call } = await boot({ env: { NC_HOST: '127.0.0.1' }, useEnvHost: true });
+    const r = await call('GET', '/api/system/settings');
+    assert.equal(r.json.lanAccessManaged, true);
+    v.assert('api-system#Settings', r.json);
+    const put = await call('PUT', '/api/system/settings', { lanAccess: false });
+    assert.equal(put.json.restartRequired, false);
+    assert.equal(put.json.lanAccessManaged, true);
   });
 
   test('PUT lanAccess:false → 寫入 config.json，回應 restartRequired:true', async () => {

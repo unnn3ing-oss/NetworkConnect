@@ -151,7 +151,7 @@ const sameName = (a, b) => a.trim().toLowerCase() === b.trim().toLowerCase();
  * @returns {{report: {created: {devices, floors, rooms}, skipped, unmatchedCategories, warnings}, floors: object[], rooms: object[], devices: object[]}}
  *   floors／rooms／devices 是「要新增」的完整紀錄（已符合 schema）
  */
-export function planCsvImport(text, existing, { now, newId }) {
+export function planCsvImport(text, existing, { now, newId, defaultIntervalSec = 60 }) {
   const records = parseCsv(text);
   if (records.length === 0) throw validation('檔案是空的');
 
@@ -273,7 +273,7 @@ export function planCsvImport(text, existing, { now, newId }) {
         vendor: '',
         model: '',
         uplink: null,
-        monitor: { method: ip ? (category?.defaultMonitor ?? 'icmp') : 'none', port: null, path: '/', intervalSec: 60, critical: false },
+        monitor: { method: ip ? (category?.defaultMonitor ?? 'icmp') : 'none', port: null, path: '/', intervalSec: defaultIntervalSec, critical: false },
         notes: notes.slice(0, 2000),
         createdAt: now,
         updatedAt: now,

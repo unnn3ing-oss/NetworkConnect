@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { nanoid } from 'nanoid';
 import { validation } from '../../core/errors.js';
+import { readDefaultIntervalSec } from '../../core/monitor-defaults.js';
 import { planCsvImport } from './csv.js';
 import { checkIntegrity, mergeBuiltinCategories } from './integrity.js';
 
@@ -134,7 +135,7 @@ export default {
       const plan = planCsvImport(
         text,
         { floors: snap.floors, rooms: snap.rooms, devices: snap.devices, categories: mergeBuiltinCategories(snap.categories) },
-        { now: new Date().toISOString(), newId: (prefix) => `${prefix}_${nanoid(10)}` },
+        { now: new Date().toISOString(), newId: (prefix) => `${prefix}_${nanoid(10)}`, defaultIntervalSec: readDefaultIntervalSec(ctx.dataDir) },
       );
       const report = { dryRun, ...plan.report };
       if (dryRun || plan.devices.length + plan.floors.length + plan.rooms.length === 0) return report;

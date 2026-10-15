@@ -19,9 +19,19 @@ export async function openDeviceWizard(service, { device = null, categoryId = ''
   const { state: data } = service;
   const editing = Boolean(device);
 
+  // 新增時預填設定頁的「預設偵測間隔」；monitor 停用或讀不到就用 60
+  let defaultIntervalSec = 60;
+  if (!editing) {
+    try {
+      const v = (await api.get('/api/monitor/settings'))?.defaultIntervalSec;
+      if (Number.isInteger(v)) defaultIntervalSec = v;
+    } catch {
+      // 用預設
+    }
+  }
   const start = editing
     ? stateFromDevice(device)
-    : newWizardState({ categories: data.categories, categoryId, floorId: filters.get().floorId, roomId: filters.get().roomId });
+    : newWizardState({ categories: data.categories, categoryId, floorId: filters.get().floorId, roomId: filters.get().roomId, defaultIntervalSec });
   // 全站篩選選了房間但沒選樓層（或房間不屬於該樓層）時，不預填房間
   if (!editing && start.roomId && !data.rooms.some((r) => r.id === start.roomId && r.floorId === start.floorId)) start.roomId = '';
 

@@ -1,5 +1,6 @@
 // NetworkConnect 桌面 App 主行程（規格 §8.6）。
 // 可測的邏輯都在 desktop/lib/（純函式，npm test 在 Linux 容器內執行）；這支檔案只負責把它們接上 Electron。
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -63,15 +64,17 @@ const startHidden = process.argv.includes('--hidden') || app.getLoginItemSetting
 
 const baseUrl = () => (currentPort ? `http://127.0.0.1:${currentPort}` : null);
 
-// 主行程查詢伺服器 API 時使用視窗的 session，登入後（設了存取密碼）的 cookie 才會一起送出
-const sessionFetch = (url, init) => session.defaultSession.fetch(url, { ...init, credentials: 'include' });
+// 主行程查詢伺服器 API：帶上啟動伺服器時給的隨機 token（設了存取密碼、視窗沒登入也能查），同時保留視窗 session 的 cookie
+const desktopToken = crypto.randomBytes(32).toString('hex');
+const sessionFetch = (url, init = {}) =>
+  session.defaultSession.fetch(url, { ...init, credentials: 'include', headers: { ...(init.headers ?? {}), 'x-nc-desktop-token': desktopToken } });
 const overview = createOverviewClient({ getBaseUrl: baseUrl, fetch: sessionFetch });
 
 // ---- 伺服器行程 ----
 const go2rtcPath = resolveGo2rtcPath({ platform, arch: process.arch, isPackaged: app.isPackaged, resourcesPath: process.resourcesPath, appRoot });
 
 function forkServer() {
-  const env = buildServerEnv({ baseEnv: process.env, dataDir, lanAccess: settings.lanAccess, go2rtcPath, port: settings.port });
+  const env = buildServerEnv({ baseEnv: process.env, dataDir, lanAccess: settings.lanAccess, go2rtcPath, port: settings.port, desktopToken });
   log.info(`啟動伺服器：dataDir=${dataDir} host=${env.NC_HOST} port=${env.NC_PORT ?? '(config)'} go2rtc=${go2rtcPath ?? '(未提供)'}`);
   const child = utilityProcess.fork(path.join(appRoot, 'server', 'cli.js'), [], {
     env,

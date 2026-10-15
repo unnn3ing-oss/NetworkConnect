@@ -187,7 +187,9 @@ async function mount(el, ctx) {
             if (!Number.isInteger(p) || p < 1 || p > 65535) { toast?.warn?.('埠號必須是 1–65535'); port.focus(); return; }
             save.disabled = true;
             try {
-              S.settings = await api.put('/api/system/settings', { modules, lanAccess: lan.checked, port: p });
+              const body = { modules, port: p };
+              if (!saved.lanAccessManaged) body.lanAccess = lan.checked;
+              S.settings = await api.put('/api/system/settings', body);
               toast?.success?.(S.settings.restartRequired ? '已儲存，重新啟動後生效' : '已儲存');
               note.hidden = !S.settings.restartRequired;
             } catch (err) {
@@ -199,7 +201,9 @@ async function mount(el, ctx) {
         },
       });
       card.append(
-        h('label', { class: 'st-check' }, lan, h('span', { text: '允許區網內的手機與其他電腦連線（關閉後只有這台電腦能開啟）' })),
+        saved.lanAccessManaged
+          ? h('p', { class: 'st-hint', dataset: { role: 'lan-managed' }, text: '區網連線由桌面 App 控制：請從選單列（Mac）或系統匣（Windows）的 NetworkConnect 圖示切換「允許手機在區網連線」。' })
+          : h('label', { class: 'st-check' }, lan, h('span', { text: '允許區網內的手機與其他電腦連線（關閉後只有這台電腦能開啟）' })),
         h('div', { class: 'st-form' }, field('網頁埠號', port, '預設 8780；被佔用時會自動往後找')),
         h('div', { class: 'st-actions' }, save),
         note,
@@ -236,7 +240,7 @@ async function mount(el, ctx) {
           },
         },
       },
-      h('div', { class: 'st-grid' }, field('預設偵測間隔（秒）', interval, '15–86400；個別設備可在設備設定覆寫'), field('同時偵測數', conc, '1–64'), field('逾時（毫秒）', timeout, '200–10000')),
+      h('div', { class: 'st-grid' }, field('預設偵測間隔（秒）', interval, '15–86400；套用到之後新增的設備（含 CSV 匯入），已建立的設備請在設備設定個別修改'), field('同時偵測數', conc, '1–64'), field('逾時（毫秒）', timeout, '200–10000')),
       h('div', { class: 'st-actions' }, save),
     );
     return h('section', { class: 'card', dataset: { card: 'monitor' } }, h('h3', { class: 'st-title', text: '偵測預設值' }), h('p', { class: 'st-muted', text: '連續 3 次失敗才會判定離線。' }), form);

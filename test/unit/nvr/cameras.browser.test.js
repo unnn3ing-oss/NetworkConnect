@@ -226,6 +226,15 @@ describe('cameras 頁（Chromium）', async () => {
     assert.equal(await t.page.locator('.cam-tile[data-state="error"] .cam-retry:visible').count() > 0, true);
   });
 
+  test('#/cameras?new=1 直接開「新增 NVR」精靈，並移除網址參數', { skip }, async () => {
+    const t = await boot({ withNvr: false, codec: 'avc1.640029', hash: '#/cameras?new=1' });
+    await t.page.waitForSelector('.nc-wizard');
+    assert.match(await t.page.locator('.nc-wizard-title').innerText(), /新增 NVR/);
+    await waitFor(async () => !(await t.page.evaluate(() => location.hash)).includes('new=1'));
+    await t.page.click('.nc-wizard [data-action="cancel"]');
+    await t.page.waitForSelector('.nc-wizard', { state: 'detached' });
+  });
+
   test('沒有 NVR：空狀態，按鈕開啟設定精靈；取消不留下任何資料', { skip }, async () => {
     const t = await boot({ withNvr: false, codec: 'avc1.640029' });
     await t.page.waitForSelector('.nc-empty');

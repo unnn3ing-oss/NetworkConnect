@@ -46,7 +46,7 @@
 
 ### `GET /api/system/settings`、`PUT /api/system/settings`
 - 讀寫 `<dataDir>/config.json` 的 `lanAccess`、`port`、`modules`（schema：`api-system#Settings`、`api-system#SettingsUpdate`；需認證）。
-- `GET` 回 200 `{lanAccess, port, modules:{inventory,io,monitor,floorplan,nvr}, restartRequired}`，內容是**已儲存**的值。
+- `GET` 回 200 `{lanAccess, port, modules:{inventory,io,monitor,floorplan,nvr}, restartRequired, lanAccessManaged?}`，內容是**已儲存**的值。`lanAccessManaged:true` 表示監聽位址由環境變數 `NC_HOST` 決定（桌面 App），`lanAccess` 不生效、也不影響 `restartRequired`，前端改顯示「到選單列／系統匣切換」。
 - `PUT` 欄位皆選填，只更新有帶的欄位（`modules` 內也只更新有帶的模組），回 200 完整 `Settings`。
 - 三項設定都在伺服器啟動時才套用：已儲存的值與「啟動當下的值」不同時 `restartRequired:true`（改回原值則回到 `false`）。重新啟動由呼叫端負責（桌面 App 由主行程重啟伺服器，無介面模式請手動重啟）。
 - 錯誤：400 `VALIDATION`（`port` 不在 1–65535、型別錯誤、未知欄位、`modules` 含 `system`，或結果會讓**所有**功能模組都停用）。`system` 模組永遠啟用，因此不在 `modules` 內。

@@ -4,6 +4,7 @@
 //   #/cameras                         畫面牆（1／4／9／16 分割，預設 4）
 //   #/cameras?device=<deviceId>       直接開該攝影機設備連結的頻道（單一畫面）
 //   #/cameras?ch=<nvrId>:<ch>         直接開指定 NVR 的指定頻道（單一畫面）
+//   #/cameras?new=1                   直接開「新增 NVR」精靈（開完自動移除此參數）
 //
 // 串流（WebSocket）只在頁面掛載、分頁可見時存在；unmount()、分頁隱藏時全部關閉。
 // go2rtc 前端元件已 vendored 在 /vendor/video-rtc.js（本模組繼承 VideoRTC，原因見 player.js 與 web/vendor/VERSIONS.md）。
@@ -74,12 +75,22 @@ async function mount(el, ctx) {
   } catch (err) {
     if (active === me) report(err);
   }
+
+  // #/cameras?new=1：直接開「新增 NVR」精靈（給導覽、總覽的按鈕用；開完移除參數，與 devices 的 ?new=1 一致）
+  const checkNew = () => {
+    if (active !== me || ctx.router.current().query.new !== '1') return;
+    ctx.router.setQuery({ new: '' });
+    openWizard(null);
+  };
+  me.offRoute = ctx.router.on(checkNew);
+  checkNew();
 }
 
 function unmount() {
   const me = active;
   if (!me) return;
   active = null;
+  me.offRoute?.();
   me.wizard?.dispose();
   me.drawer?.close?.();
   me.viewer?.destroy(); // 關閉所有串流

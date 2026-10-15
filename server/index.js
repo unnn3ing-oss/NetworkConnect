@@ -81,7 +81,7 @@ export async function startServer(opts = {}) {
     validate: (name, doc) => validate(COLLECTION_SCHEMAS[name], doc),
   });
   const events = createEvents({ log });
-  const auth = createAuth({ secrets, validate });
+  const auth = createAuth({ secrets, validate, desktopToken: env.NC_DESKTOP_TOKEN ?? '' });
 
   let mockServices = null;
   if (mock) {
@@ -113,7 +113,8 @@ export async function startServer(opts = {}) {
     config,
     store,
     importer: opts.moduleImporter,
-    ctxBase: { config, events, log, secrets, dataDir, mock, prober: mockServices?.prober, validate, startedAt },
+    // lanAccessManaged：監聽位址由環境變數決定（桌面 App 依自己的設定傳 NC_HOST），config.json 的 lanAccess 不會生效
+    ctxBase: { config, events, log, secrets, dataDir, mock, prober: mockServices?.prober, validate, startedAt, lanAccessManaged: opts.host === undefined && Boolean(env.NC_HOST) },
   });
   const ctx = { config, events, log, secrets, dataDir, mock, prober: mockServices?.prober, validate, startedAt, modules: { list: loader.list } };
 
@@ -168,7 +169,7 @@ export async function startServer(opts = {}) {
       let device = null;
       try {
         const d = await devices.get(payload?.deviceId);
-        if (d) device = { name: d.name, critical: Boolean(d.critical) };
+        if (d) device = { name: d.name, critical: d.monitor?.critical === true };
       } catch {
         // 查不到就讓桌面端退回自己查
       }

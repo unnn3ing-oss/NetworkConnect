@@ -65,3 +65,8 @@ test('buildServerEnv：外部已設定 NC_PORT（例如冒煙測試用 0）時�
   const env = buildServerEnv({ baseEnv: { NC_PORT: '0' }, dataDir: '/d', lanAccess: true, go2rtcPath: null, port: null });
   assert.equal(env.NC_PORT, '0');
 });
+
+test('buildServerEnv：有 desktopToken 時傳 NC_DESKTOP_TOKEN，沒有時不傳', () => {
+  assert.equal(buildServerEnv({ baseEnv: {}, dataDir: '/d', lanAccess: true, go2rtcPath: null, port: null, desktopToken: 'x'.repeat(64) }).NC_DESKTOP_TOKEN, 'x'.repeat(64));
+  assert.equal(buildServerEnv({ baseEnv: {}, dataDir: '/d', lanAccess: true, go2rtcPath: null, port: null }).NC_DESKTOP_TOKEN, undefined);
+});

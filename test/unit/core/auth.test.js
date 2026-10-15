@@ -68,6 +68,20 @@ describe('已設密碼', () => {
     await app.close();
   });
 
+  test('桌面 App 主行程帶正確的 x-nc-desktop-token 視同已登入；錯的或太短的 token 不行', async () => {
+    const token = 'a'.repeat(64);
+    const ctx = await boot({ desktopToken: token });
+    await ctx.app.inject({ method: 'PUT', url: '/api/auth/password', payload: { password: 'secret-pw' } });
+    assert.equal((await ctx.app.inject({ url: '/api/secret', headers: { 'x-nc-desktop-token': token } })).statusCode, 200);
+    assert.equal((await ctx.app.inject({ url: '/api/secret', headers: { 'x-nc-desktop-token': 'b'.repeat(64) } })).statusCode, 401);
+    assert.equal((await ctx.app.inject('/api/secret')).statusCode, 401);
+    await ctx.app.close();
+    const weak = await boot({ desktopToken: 'short' });
+    await weak.app.inject({ method: 'PUT', url: '/api/auth/password', payload: { password: 'secret-pw' } });
+    assert.equal((await weak.app.inject({ url: '/api/secret', headers: { 'x-nc-desktop-token': 'short' } })).statusCode, 401);
+    await weak.app.close();
+  });
+
   test('百分比編碼的路徑（/%61pi/…）也要登入，不能繞過檢查', async () => {
     const { app } = await bootWithPassword();
     for (const url of ['/%61pi/secret', '/%61%70%69/secret', '/api/%73ecret', '/%2561pi/secret', '/%E0%A4%A']) {
