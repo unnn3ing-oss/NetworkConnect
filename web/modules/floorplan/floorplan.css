@@ -1,0 +1,98 @@
+/* 平面圖：只用 web/ui 的 token，不使用行內樣式屬性（CSP style-src 'self'）。 */
+.nc-fp { display: grid; gap: 12px; }
+
+.nc-fp-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.nc-fp-grow { flex: 1 1 auto; }
+.nc-fp-tools { display: flex; gap: 8px; flex-wrap: wrap; }
+.nc-fp-file { position: absolute; }
+
+.nc-fp-hint { margin: 0; color: var(--muted); font-size: 13px; }
+.nc-fp-hint[hidden] { display: none; }
+
+.nc-fp-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+.nc-fp-body.is-edit { grid-template-columns: 240px minmax(0, 1fr); }
+
+/* ---- 畫布 ---- */
+.nc-fp-viewport {
+  position: relative; overflow: hidden; height: min(70vh, 720px); min-height: 320px;
+  background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-m);
+  touch-action: none; user-select: none; -webkit-user-select: none; cursor: grab; outline: none;
+}
+.nc-fp-viewport:focus-visible { box-shadow: 0 0 0 3px var(--ring); }
+.nc-fp-viewport.is-drop { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+.nc-fp-stage { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; }
+.nc-fp-img { display: block; max-width: none; pointer-events: none; background: #fff; }
+
+.nc-fp-controls { position: absolute; right: 10px; top: 10px; display: flex; gap: 6px; z-index: 3; }
+
+/* ---- 設備點（疊在圖上，大小不隨縮放改變） ---- */
+.nc-fp-dots { position: absolute; inset: 0; pointer-events: none; z-index: 2; }
+.nc-fp-dot {
+  position: absolute; left: 0; top: 0; width: 32px; height: 32px; margin: -16px 0 0 -16px; pointer-events: auto; cursor: pointer; touch-action: none;
+}
+.nc-fp-dot-body {
+  position: absolute; inset: 0;
+  display: grid; place-items: center; border-radius: 50%;
+  background: var(--surface); border: 2px solid var(--border); color: var(--text); box-shadow: var(--shadow);
+}
+.nc-fp-dot[data-status="up"] .nc-fp-dot-body { border-color: var(--st-up); }
+.nc-fp-dot[data-status="down"] .nc-fp-dot-body { border-color: var(--st-down); }
+.nc-fp-dot-body .nc-status { position: absolute; right: -4px; top: -4px; }
+.nc-fp-dot:focus-visible .nc-fp-dot-body { box-shadow: 0 0 0 3px var(--ring); }
+.nc-fp-dot.is-selected .nc-fp-dot-body { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+.nc-fp-dot.is-dragging { cursor: grabbing; z-index: 5; }
+.nc-fp-dot.is-dragging .nc-fp-dot-body { box-shadow: 0 0 0 3px var(--accent-glow), var(--shadow); }
+.nc-fp-label {
+  position: absolute; left: 50%; top: 38px; transform: translateX(-50%); white-space: nowrap; max-width: 160px; overflow: hidden; text-overflow: ellipsis;
+  padding: 1px 8px; font-size: 12px; font-weight: 600; line-height: 1.5;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-pill); color: var(--text);
+}
+.nc-fp-dots.is-lowzoom .nc-fp-label { display: none; }
+.nc-fp-cam {
+  position: absolute; left: 50%; top: -32px; transform: translateX(-50%); white-space: nowrap;
+  display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; font-size: 12px; font-weight: 700;
+  background: var(--accent); color: var(--on-accent); border: 0; border-radius: var(--radius-pill); cursor: pointer; box-shadow: var(--shadow);
+}
+.is-edit .nc-fp-cam { display: none; }
+
+/* ---- 左側未放置清單 ---- */
+.nc-fp-side {
+  display: flex; flex-direction: column; gap: 8px; padding: 12px; max-height: min(70vh, 720px); min-height: 200px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-m);
+}
+.nc-fp-side-head { display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+.nc-fp-side-count { color: var(--muted); font-variant-numeric: tabular-nums; }
+.nc-fp-list { list-style: none; margin: 0; padding: 0; overflow: auto; display: grid; gap: 6px; }
+.nc-fp-item {
+  width: 100%; display: flex; align-items: center; gap: 8px; padding: 8px 10px; text-align: left; font: inherit; color: var(--text);
+  background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-s); cursor: grab; touch-action: pan-y;
+}
+.nc-fp-item[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.nc-fp-item:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
+.nc-fp-item-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nc-fp-item-code { color: var(--muted); font-size: 12px; font-family: var(--font-mono); }
+.nc-fp-side-empty { margin: 0; color: var(--muted); font-size: 13px; }
+.nc-fp-side-empty[hidden] { display: none; }
+.nc-fp-ghost {
+  position: fixed; left: 0; top: 0; z-index: 1000; pointer-events: none; display: flex; align-items: center; gap: 6px; padding: 6px 12px;
+  background: var(--surface); color: var(--text); border: 1px solid var(--accent); border-radius: var(--radius-pill); box-shadow: var(--shadow); font-size: 13px;
+}
+
+/* ---- 無平面圖的格狀檢視 ---- */
+.nc-fp-grid { display: grid; gap: 16px; }
+.nc-fp-grid-title { margin: 8px 0 0; font-size: 16px; }
+.nc-fp-room h4 { margin: 0 0 8px; font-size: 14px; color: var(--muted); }
+.nc-fp-cards { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+.nc-fp-card {
+  width: 100%; display: flex; align-items: center; gap: 8px; padding: 10px 12px; text-align: left; font: inherit; color: var(--text);
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-s); cursor: pointer;
+}
+.nc-fp-card:hover { border-color: var(--accent); }
+.nc-fp-card:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
+.nc-fp-card-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+@media (max-width: 820px) {
+  .nc-fp-body.is-edit { grid-template-columns: minmax(0, 1fr); }
+  .nc-fp-side { max-height: 220px; min-height: 0; order: 2; }
+  .nc-fp-viewport { height: 60vh; min-height: 280px; }
+}
