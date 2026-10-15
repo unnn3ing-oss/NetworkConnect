@@ -1,0 +1,16 @@
+/* 首次導覽：步驟內的狀態列、行內表單與按鈕列（導覽本身的樣式在 web/ui/guide.css）。 */
+.ob-page { display: grid; gap: 12px; justify-items: start; }
+.ob-page h2 { margin: 0; font-size: 24px; }
+.ob-page p { margin: 0; color: var(--muted); }
+
+.ob-status { display: flex; align-items: center; gap: 8px; margin: 12px 0 0; font-weight: 600; color: var(--muted); }
+.ob-status.done { color: var(--ok); }
+.ob-status .ob-mark { flex: none; display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--track); }
+.ob-status.done .ob-mark { background: var(--ok); color: var(--on-accent); }
+
+.ob-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; margin: 14px 0 0; }
+.ob-form .nc-field { flex: 1 1 150px; min-width: 0; margin: 0; }
+.ob-form .btn { flex: none; }
+.ob-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 16px 0 0; }
+.ob-actions .btn { display: inline-flex; align-items: center; gap: 6px; }
+.ob-skip { margin: 12px 0 0; color: var(--muted); font-size: 14px; }
