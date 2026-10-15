@@ -1,5 +1,7 @@
-// topology 前端模組 stub（A0 建立）：業務邏輯由 B3 實作。請保留 id／route／order，替換 mount／unmount 即可。
-// Cytoscape 已 vendored 在 /vendor/cytoscape.min.js。
+// topology 前端模組（B3）：網路架構圖。業務邏輯見 graph.js（純函式）、style.js（Cytoscape 樣式）、view.js（畫面）。
+// 保留 id／route／order；unmount() 會銷毀 Cytoscape 並解除所有訂閱。
+let active = null;
+
 export default {
   id: 'topology',
   title: '架構圖',
@@ -8,16 +10,20 @@ export default {
   order: 30,
   requires: ['inventory'],
   async mount(el, ctx) {
-    const card = document.createElement('div');
-    card.className = 'card nc-stub';
-    const h = document.createElement('h2');
-    h.className = 'nc-card-title';
-    h.textContent = '架構圖';
-    const badge = document.createElement('span');
-    badge.className = 'nc-stub-badge';
-    badge.textContent = '建置中';
-    card.append(h, badge);
-    el.replaceChildren(card);
+    const me = { view: null, gone: false };
+    active = me;
+    const { createTopologyView } = await import('./view.js');
+    const view = await createTopologyView(el, ctx);
+    if (me.gone) {
+      view.destroy(); // 載入期間已經離開
+      return;
+    }
+    me.view = view;
   },
-  unmount() {},
+  unmount() {
+    if (!active) return;
+    active.gone = true;
+    active.view?.destroy();
+    active = null;
+  },
 };
