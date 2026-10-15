@@ -7,7 +7,7 @@ import { detectImage, extMatches, ImageError } from './image.js';
 
 const MAX_BYTES = 10 * 1024 * 1024;
 const FLOOR_ID = /^flr_[A-Za-z0-9_-]{1,32}$/;
-const IMAGE_CSP = "default-src 'none'; style-src 'unsafe-inline'";
+const IMAGE_CSP = "default-src 'none'; style-src 'unsafe-inline'; sandbox";
 
 let offs = [];
 const clamp01 = (n) => Math.min(1, Math.max(0, n));

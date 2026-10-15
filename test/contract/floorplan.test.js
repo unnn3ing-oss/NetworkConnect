@@ -141,7 +141,7 @@ describe('GET /api/plans/:floorId/image', () => {
     const r = await getJson(`/api/plans/${floorA}/image`);
     assert.equal(r.status, 200);
     assert.equal(r.headers['content-type'], 'image/png');
-    assert.equal(r.headers['content-security-policy'], "default-src 'none'; style-src 'unsafe-inline'");
+    assert.equal(r.headers['content-security-policy'], "default-src 'none'; style-src 'unsafe-inline'; sandbox");
     assert.equal(r.headers['x-content-type-options'], 'nosniff');
     assert.ok(Buffer.from(r.raw).equals(buf));
   });
