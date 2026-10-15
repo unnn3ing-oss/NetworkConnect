@@ -141,6 +141,16 @@ describe('範本與 CRUD', () => {
     assert.equal(r.json.urlTemplate, 'rtsp://{u}:{p}@{host}:{port}/ch{ch:02}/{s}');
   });
 
+  test('自訂品牌：複製貼上多帶的前後空白、換行會自動去掉；含 & 的網址（昇銳／TVT 格式）可正常註冊', async () => {
+    const { call, f } = await boot();
+    const r = await call('POST', '/api/nvrs', {
+      ...NEW, brand: 'custom', urlTemplate: '  rtsp://{u}:{p}@{host}:{port}/chID={ch}&streamType={s}&linkType=tcp \n', streamMain: 'main', streamSub: 'sub', channelCount: 1,
+    });
+    assert.equal(r.status, 201, JSON.stringify(r.json));
+    assert.equal(r.json.urlTemplate, 'rtsp://{u}:{p}@{host}:{port}/chID={ch}&streamType={s}&linkType=tcp');
+    assert.equal(f.streams.get(`nvr_${r.json.id}_1_sub`), 'rtsp://admin:p%40ss%3Aw%2Frd%20%231@192.168.1.20:554/chID=1&streamType=sub&linkType=tcp');
+  });
+
   test('建立時驗證失敗 → 400 VALIDATION', async () => {
     const { call, f } = await boot();
     const bad = [
@@ -151,6 +161,7 @@ describe('範本與 CRUD', () => {
       { ...NEW, brand: 'custom' }, // 缺 urlTemplate
       { ...NEW, brand: 'custom', urlTemplate: 'exec:ffmpeg -i x' }, // 只允許 rtsp://
       { ...NEW, brand: 'custom', urlTemplate: 'http://{host}/x' },
+      { ...NEW, brand: 'custom', urlTemplate: 'rtsp://{host}/a b' }, // 中間有空白：go2rtc 會拒絕，先在這裡擋下並說明
       { ...NEW, host: '192.168.1.20/evil' },
       { ...NEW, host: 'a b' },
       { ...NEW, deviceId: 'dev_missing' },

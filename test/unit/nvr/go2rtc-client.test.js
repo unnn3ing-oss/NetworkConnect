@@ -79,6 +79,23 @@ describe('對假 go2rtc 的操作', () => {
     await client.removeStream('不存在的串流'); // 不丟錯
   });
 
+  test('第一次註冊：go2rtc 刪除不存在的串流回 400「yaml: path not exist」，仍要能註冊成功', async () => {
+    await client.upsertStream('nvr_first_time', 'rtsp://u:p@h:554/chID=1&streamType=main&linkType=tcp');
+    assert.equal(fake.streams.get('nvr_first_time'), 'rtsp://u:p@h:554/chID=1&streamType=main&linkType=tcp');
+    await client.removeStream('nvr_first_time');
+    await client.removeStream('nvr_first_time'); // 第二次刪除：400 也視為已刪除
+  });
+
+  test('HTTP 錯誤訊息附上 go2rtc 的原因，且網址帳密被遮掉', async () => {
+    await assert.rejects(client.upsertStream('spaced', 'rtsp://admin:hunter2@h/a b'), (err) => {
+      assert.equal(err.code, 'UPSTREAM');
+      assert.match(err.message, /HTTP 400/);
+      assert.match(err.message, /source with spaces may be insecure/);
+      assert.doesNotMatch(err.message, /hunter2/);
+      return true;
+    });
+  });
+
   test('絕不使用 /api/frame.jpeg（App 沒有內附 ffmpeg）', async () => {
     fake.streams.set('s', 'rtsp://x');
     await client.probe('s');

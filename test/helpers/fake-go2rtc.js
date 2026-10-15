@@ -3,7 +3,7 @@
 //   GET    /api                      → {version, ...}
 //   GET    /api/streams              → { <name>: {producers:[{url}]} }
 //   PUT    /api/streams?name=&src=   → 註冊串流（缺 name 或 src 回 400）
-//   DELETE /api/streams?src=<name>   → 移除串流
+//   DELETE /api/streams?src=<name>   → 移除串流（不存在時回 400「yaml: path not exist」，與真正的 go2rtc 相同）
 //   GET    /api/frame.jpeg           → 固定 JPEG（真的 go2rtc 單一執行檔沒有 ffmpeg，此路由僅供 mock 使用）
 //   WS     /api/ws?src=<name>        → 收到 {"type":"mse"} 請求後回 {"type":"mse","value":"video/mp4; codecs=\"avc1.640029\""}，再送一段二進位
 //                                      （與真的 go2rtc 一樣：串流未註冊 → {"type":"error"}；瀏覽器要等 sourceopen 後才送請求。
@@ -58,11 +58,15 @@ export async function createFakeGo2rtc({ port = 0, host = '127.0.0.1' } = {}) {
   app.put('/api/streams', async (req, reply) => {
     const { name, src } = req.query;
     if (!name || !src) return reply.code(400).send({ error: 'name 與 src 必填' });
+    // 與真正的 go2rtc 1.9.14 相同：來源含空白回 400
+    if (/\s/.test(src)) return reply.code(400).type('text/plain').send('streams: source with spaces may be insecure');
     streams.set(name, src);
     return {};
   });
 
-  app.delete('/api/streams', async (req) => {
+  // 與真正的 go2rtc 1.9.14 相同：刪除不存在的串流回 400「yaml: path not exist」（不是 404）
+  app.delete('/api/streams', async (req, reply) => {
+    if (!streams.has(req.query.src)) return reply.code(400).type('text/plain').send('yaml: path not exist');
     streams.delete(req.query.src);
     return {};
   });

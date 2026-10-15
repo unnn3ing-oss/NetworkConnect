@@ -6,6 +6,9 @@ import {
   buildStreamUrl, getTemplate, isRtspTemplate, isValidHost, loadTemplates, parseStreamName, redactUrls, streamName,
 } from './templates.js';
 
+/** 複製貼上常多帶前後空白或換行：先去掉（go2rtc 遇到空白會拒絕） */
+const trimTemplate = (t) => (typeof t === 'string' ? t.trim() : t);
+
 const nowSecretKey = (id) => `nvr:${id}`;
 
 const H265_WARNING = '偵測到 H.265。瀏覽器對 H.265 支援不穩，請將 NVR 的子碼流改為 H.264 後再試。';
@@ -141,6 +144,9 @@ export function createNvrService({ ctx, client }) {
     if (record.brand === 'custom' && !isRtspTemplate(record.urlTemplate)) {
       throw validation('自訂 URL 必須以 rtsp:// 或 rtsps:// 開頭');
     }
+    if (record.brand === 'custom' && /\s/.test(record.urlTemplate)) {
+      throw validation('自訂 RTSP 網址中間不能有空白或換行，請檢查複製貼上時有沒有多帶到');
+    }
     const seen = new Set();
     for (const c of record.channels) {
       if (c.ch > record.channelCount) throw validation(`頻道 ${c.ch} 超過頻道數 ${record.channelCount}`);
@@ -193,7 +199,7 @@ export function createNvrService({ ctx, client }) {
           channelCount: body.channelCount,
           streamMain: body.streamMain ?? tpl.streamMain,
           streamSub: body.streamSub ?? tpl.streamSub,
-          urlTemplate: body.brand === 'custom' ? body.urlTemplate : null,
+          urlTemplate: body.brand === 'custom' ? trimTemplate(body.urlTemplate) : null,
           channels: body.channels
             ? [...body.channels].sort((a, b) => a.ch - b.ch).map((c) => ({ ch: c.ch, name: c.name ?? '', deviceId: c.deviceId ?? null, enabled: c.enabled ?? true }))
             : normalizeChannels([], body.channelCount),
@@ -225,7 +231,7 @@ export function createNvrService({ ctx, client }) {
           next.streamMain = fields.streamMain ?? tpl.streamMain;
           next.streamSub = fields.streamSub ?? tpl.streamSub;
         }
-        next.urlTemplate = next.brand === 'custom' ? (fields.urlTemplate ?? cur.urlTemplate) : null;
+        next.urlTemplate = next.brand === 'custom' ? trimTemplate(fields.urlTemplate ?? cur.urlTemplate) : null;
         next.deviceId ??= null;
         if (fields.channels) {
           next.channels = [...fields.channels].sort((a, b) => a.ch - b.ch).map((c) => ({ ch: c.ch, name: c.name ?? '', deviceId: c.deviceId ?? null, enabled: c.enabled ?? true }));

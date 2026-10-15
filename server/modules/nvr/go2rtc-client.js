@@ -56,8 +56,9 @@ export function createGo2rtcClient({
       });
     }
     if (!res.ok) {
-      await res.body?.cancel?.().catch(() => {});
-      throw upstream(`串流服務（go2rtc）回應錯誤（HTTP ${res.status}）`, { status: res.status });
+      // 附上 go2rtc 的錯誤原因（例：streams: source with spaces may be insecure），遮掉網址裡的帳密
+      const reason = redactUrls((await res.text().catch(() => '')).trim()).slice(0, 200);
+      throw upstream(`串流服務（go2rtc）回應錯誤（HTTP ${res.status}）${reason ? `：${reason}` : ''}`, { status: res.status, body: reason });
     }
     const text = await res.text().catch(() => '');
     if (!text) return null;
@@ -69,6 +70,11 @@ export function createGo2rtcClient({
   }
 
   const q = (params) => new URLSearchParams(params).toString();
+
+  // 刪除不存在的串流：真正的 go2rtc 回 400「yaml: path not exist」（設定檔裡沒有這筆），不是 404，兩種都視為已刪除
+  const ignoreMissing = (err) => {
+    if (err.details?.status !== 404 && err.details?.status !== 400) throw err;
+  };
 
   return {
     baseUrl: base,
@@ -86,16 +92,12 @@ export function createGo2rtcClient({
      * 帳密變更後才不會留下舊來源。
      */
     async upsertStream(name, src) {
-      await call('DELETE', `/api/streams?${q({ src: name })}`).catch((err) => {
-        if (err.details?.status !== 404) throw err;
-      });
+      await call('DELETE', `/api/streams?${q({ src: name })}`).catch(ignoreMissing);
       await call('PUT', `/api/streams?${q({ name, src })}`);
     },
 
     async removeStream(name) {
-      await call('DELETE', `/api/streams?${q({ src: name })}`).catch((err) => {
-        if (err.details?.status !== 404) throw err;
-      });
+      await call('DELETE', `/api/streams?${q({ src: name })}`).catch(ignoreMissing);
     },
 
     /**
