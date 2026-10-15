@@ -2,7 +2,7 @@
 // 表單欄位一律以字串存在 wizard.state，送出時由 logic.buildPayload() 轉型。
 import { h, field, textInput, selectInput } from './dom.js';
 import {
-  buildPayload, categoryIconName, monitorDefaults, newWizardState, stateFromDevice,
+  applyIpWithPort, buildPayload, categoryIconName, monitorDefaults, newWizardState, stateFromDevice,
   uplinkCandidates, validateStep, WIZARD_STEP_IDS,
 } from './logic.js';
 import { MEDIUM_LABELS, METHOD_LABELS, TIER_LABELS, monitorSummary } from './labels.js';
@@ -88,6 +88,20 @@ export async function openDeviceWizard(service, { device = null, categoryId = ''
 
   // ------------------------------------------------------------ 步驟 2：基本資料
   function renderBasic(state) {
+    const ipInput = textInput(state, 'ip', { inputmode: 'decimal', autocomplete: 'off', placeholder: '192.168.1.1' });
+    const ipField = field('IP 位址', ipInput, '可直接貼上「IP:埠」（例：192.168.10.10:2345），埠會自動帶到「偵測」步驟');
+    const ipHint = ipField.querySelector('.nc-field-hint');
+    // 貼上或離開欄位時，把「IP:埠」拆開：IP 留在這格，埠與偵測方式帶到「偵測」步驟
+    const splitPort = () => {
+      const r = applyIpWithPort(state, ipInput.value);
+      if (!r) return;
+      ipInput.value = r.ip;
+      ipHint.textContent = `已拆出埠 ${r.port}：偵測方式改為「${r.method === 'http' ? `HTTP（埠 ${r.port}）` : `TCP 埠 ${r.port}`}」，可在「偵測」步驟修改。`;
+    };
+    ipInput.addEventListener('input', (e) => {
+      if (e.inputType === 'insertFromPaste' || e.inputType === 'insertFromDrop') splitPort();
+    });
+    ipInput.addEventListener('change', splitPort);
     return h(
       'div',
       { class: 'nc-stack' },
@@ -96,7 +110,7 @@ export async function openDeviceWizard(service, { device = null, categoryId = ''
         { class: 'dv-form-grid' },
         field('名稱 *', textInput(state, 'name', { maxlength: '100', autocomplete: 'off', placeholder: '例：客廳 Mesh 主節點' })),
         field('編號', textInput(state, 'code', { maxlength: '40', autocomplete: 'off', placeholder: '例：R01' }), '選填；不可與其他設備重複'),
-        field('IP 位址', textInput(state, 'ip', { inputmode: 'decimal', autocomplete: 'off', placeholder: '192.168.1.1' })),
+        ipField,
         field('MAC 位址', textInput(state, 'mac', { autocomplete: 'off', placeholder: 'AA:BB:CC:DD:EE:FF' })),
         field('廠牌', textInput(state, 'vendor', { maxlength: '100', autocomplete: 'off', placeholder: '例：Zyxel' })),
         field('型號', textInput(state, 'model', { maxlength: '100', autocomplete: 'off' })),
@@ -191,7 +205,7 @@ export async function openDeviceWizard(service, { device = null, categoryId = ''
   // ------------------------------------------------------------ 步驟 5：偵測
   function renderMonitor(state) {
     const touch = () => { state.monitorTouched = true; };
-    const portField = field('偵測埠', textInput(state, 'monitorPort', { inputmode: 'numeric', placeholder: '例：22' }), 'TCP 必填；HTTP 留空代表 80');
+    const portField = field('偵測埠', textInput(state, 'monitorPort', { inputmode: 'numeric', placeholder: '例：22' }), 'TCP 必填；HTTP 留空代表 80。設備改過網頁埠（例如 NVR 用 2345）時填改過的號碼');
     const pathField = field('HTTP 路徑', textInput(state, 'monitorPath', { placeholder: '/' }));
     const detail = h('div', { class: 'dv-form-grid' }, portField, pathField);
     const more = h('div', { class: 'dv-form-grid' });
@@ -218,7 +232,9 @@ export async function openDeviceWizard(service, { device = null, categoryId = ''
     return h(
       'div',
       { class: 'nc-stack' },
-      box('連線偵測', h('p', {}, category ? `已依「${category.name}」帶入預設值，可以修改。連續 3 次失敗才會判定離線。` : '連續 3 次失敗才會判定離線。')),
+      box('連線偵測', h('div', {},
+        h('p', {}, category ? `已依「${category.name}」帶入預設值，可以修改。連續 3 次失敗才會判定離線。` : '連續 3 次失敗才會判定離線。'),
+        h('p', { class: 'dv-muted' }, '有些 NVR、攝影機會關閉 Ping 回應，用 Ping 會一直顯示離線：改選「TCP 埠」並填它的網頁埠或 RTSP 埠即可。'))),
       field('偵測方式', methodSelect),
       detail,
       more,
@@ -264,7 +280,10 @@ export async function openDeviceWizard(service, { device = null, categoryId = ''
       id,
       label: STEP_LABELS[id],
       render: (state) => renderers[id](state),
-      validate: (state) => validateStep(id, state),
+      validate: (state) => {
+        if (id === 'basic') applyIpWithPort(state, state.ip); // 還沒離開欄位就按「下一步」時也拆開
+        return validateStep(id, state);
+      },
     })),
     async onSubmit(state) {
       const payload = buildPayload(state);

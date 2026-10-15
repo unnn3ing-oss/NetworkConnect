@@ -372,3 +372,50 @@ test('手機 390×844：導覽建立樓層與房間、總覽、設備、設定�
     expect(await noOverflow(page), `${title}頁橫向捲動`).toBe(true);
   }
 });
+
+test('新增設備：IP 欄貼上「IP:埠」或網址，自動拆開並帶入偵測方式與埠', async ({ boot }) => {
+  const { page, url, api } = await boot();
+  await page.goto(`${url}#/devices`);
+  const wiz = page.locator('.nc-wizard');
+  const next = () => wiz.locator('[data-action="next"]').click();
+  const ipField = wiz.locator('.nc-field:has(.nc-field-label:text-is("IP 位址"))');
+
+  // 1. 貼上 192.168.10.10:2345（模擬貼上事件）→ IP 欄只留 IP、提示已拆出埠 → 偵測步驟為 TCP 2345
+  await openNewDevice(page);
+  await wiz.locator('.dv-cat[data-id="cat_nvr"]').click();
+  await next();
+  await wiz.locator('.nc-field:has(.nc-field-label:text-is("名稱 *")) input').fill('監控主機');
+  await ipField.locator('input').evaluate((el) => {
+    el.value = '192.168.10.10:2345';
+    el.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertFromPaste' }));
+  });
+  await expect(ipField.locator('input')).toHaveValue('192.168.10.10');
+  await expect(ipField.locator('.nc-field-hint')).toContainText('已拆出埠 2345');
+  await next(); // 位置
+  await next(); // 連線
+  await next(); // 偵測
+  await expect(wiz.locator('.nc-field:has(.nc-field-label:text-is("偵測方式")) select')).toHaveValue('tcp');
+  await expect(wiz.locator('.nc-field:has(.nc-field-label:text-is("偵測埠")) input')).toHaveValue('2345');
+  await next(); // 確認
+  await expect(wiz.locator('.nc-kv')).toContainText('TCP 埠 2345');
+  await next();
+  await wiz.waitFor({ state: 'detached' });
+
+  // 2. 打字輸入瀏覽器網址、沒離開欄位就按下一步 → 也會拆開成 HTTP 8080
+  await openNewDevice(page);
+  await wiz.locator('.dv-cat[data-id="cat_camera"]').click();
+  await next();
+  await wiz.locator('.nc-field:has(.nc-field-label:text-is("名稱 *")) input').fill('門口攝影機');
+  await ipField.locator('input').pressSequentially('http://192.168.10.20:8080/');
+  await next();
+  await next();
+  await next();
+  await expect(wiz.locator('.nc-field:has(.nc-field-label:text-is("偵測方式")) select')).toHaveValue('http');
+  await next();
+  await next();
+  await wiz.waitFor({ state: 'detached' });
+
+  const byName = Object.fromEntries((await api('/api/devices')).map((d) => [d.name, d]));
+  expect([byName['監控主機'].ip, byName['監控主機'].monitor.method, byName['監控主機'].monitor.port]).toEqual(['192.168.10.10', 'tcp', 2345]);
+  expect([byName['門口攝影機'].ip, byName['門口攝影機'].monitor.method, byName['門口攝影機'].monitor.port]).toEqual(['192.168.10.20', 'http', 8080]);
+});

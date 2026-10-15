@@ -7,6 +7,8 @@ import {
   uplinkCandidates,
   isIpv4,
   isMac,
+  parseIpWithPort,
+  applyIpWithPort,
   categoryIconName,
   monitorDefaults,
   newWizardState,
@@ -227,5 +229,35 @@ describe('reorderOrders：樓層上下移', () => {
     const final = Object.fromEntries(messy.map((f) => [f.id, f.order]));
     for (const c of changes) final[c.id] = c.order;
     assert.ok(final.b < final.a && final.a < final.c);
+  });
+});
+
+describe('parseIpWithPort／applyIpWithPort：貼上「IP:埠」自動拆開', () => {
+  test('IP:埠 → TCP 偵測該埠', () => {
+    assert.deepEqual(parseIpWithPort(' 192.168.10.10:2345 '), { ip: '192.168.10.10', port: '2345', method: 'tcp', path: '/' });
+  });
+
+  test('從瀏覽器複製的網址：http → HTTP 偵測（含路徑，沒寫埠＝80）；https → TCP', () => {
+    assert.deepEqual(parseIpWithPort('http://192.168.10.10:2345/login.html'), { ip: '192.168.10.10', port: '2345', method: 'http', path: '/login.html' });
+    assert.deepEqual(parseIpWithPort('http://192.168.10.10/'), { ip: '192.168.10.10', port: '80', method: 'http', path: '/' });
+    assert.deepEqual(parseIpWithPort('HTTPS://192.168.10.10:8443'), { ip: '192.168.10.10', port: '8443', method: 'tcp', path: '/' });
+    assert.deepEqual(parseIpWithPort('https://192.168.10.10'), { ip: '192.168.10.10', port: '443', method: 'tcp', path: '/' });
+  });
+
+  test('純 IP、埠超出範圍、IP 不合法、主機名稱 → null（維持原本的驗證）', () => {
+    for (const t of ['192.168.10.10', '192.168.10.10:0', '192.168.10.10:70000', '192.168.10.300:80', 'nvr.local:2345', '192.168.10.10:2345/x', '', null]) {
+      assert.equal(parseIpWithPort(t), null, String(t));
+    }
+  });
+
+  test('套用到精靈狀態：IP 欄只留 IP，偵測方式與埠帶到偵測步驟，之後換類別不會被蓋掉', () => {
+    const s = { ip: '192.168.10.10:2345', monitorMethod: 'icmp', monitorPort: '', monitorPath: '/', monitorTouched: false, intervalSec: '60', critical: false };
+    assert.ok(applyIpWithPort(s, s.ip));
+    assert.deepEqual([s.ip, s.monitorMethod, s.monitorPort, s.monitorTouched], ['192.168.10.10', 'tcp', '2345', true]);
+    assert.equal(validateStep('basic', { ...s, name: 'NVR', mac: '' }), null);
+    assert.equal(validateStep('monitor', s), null);
+    const plain = { ip: '192.168.1.1', monitorMethod: 'icmp' };
+    assert.equal(applyIpWithPort(plain, plain.ip), null);
+    assert.equal(plain.monitorMethod, 'icmp', '純 IP 不改偵測方式');
   });
 });

@@ -10,6 +10,37 @@ const IPV4 = /^(25[0-5]|2[0-4]\d|1?\d?\d)(\.(25[0-5]|2[0-4]\d|1?\d?\d)){3}$/;
 const MAC = /^([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}$/;
 export const isIpv4 = (s) => IPV4.test(String(s ?? ''));
 export const isMac = (s) => MAC.test(String(s ?? ''));
+const validPort = (v) => /^\d+$/.test(v) && Number(v) >= 1 && Number(v) <= 65535;
+
+/**
+ * 「IP:埠」或從瀏覽器複製的網址 → 拆出 IP 與偵測設定；純 IP 或看不懂的格式回 null。
+ *   192.168.10.10:2345            → TCP 偵測 2345 埠
+ *   http://192.168.10.10:2345/a   → HTTP 偵測 2345 埠、路徑 /a（沒寫埠＝80）
+ *   https://192.168.10.10:2345    → TCP 偵測 2345 埠（HTTP 偵測只在 443／8443 走 HTTPS，其他埠用 TCP 最穩）
+ * @returns {{ip: string, port: string, method: 'tcp'|'http', path: string}|null}
+ */
+export function parseIpWithPort(text) {
+  const m = /^(?:(https?):\/\/)?([\d.]+)(?::(\d{1,5}))?(\/\S*)?\/?$/i.exec(String(text ?? '').trim());
+  if (!m || !isIpv4(m[2])) return null;
+  const scheme = m[1]?.toLowerCase();
+  if (!scheme && (!m[3] || m[4])) return null; // 純 IP（不用處理）或沒有 http:// 卻帶路徑
+  const port = m[3] ?? (scheme === 'https' ? '443' : '80');
+  if (!validPort(port)) return null;
+  if (scheme === 'http') return { ip: m[2], port, method: 'http', path: m[4] || '/' };
+  return { ip: m[2], port, method: 'tcp', path: '/' };
+}
+
+/** 把 parseIpWithPort 的結果套到精靈狀態（IP 欄只留 IP，埠與偵測方式帶到「偵測」步驟）；回傳是否有套用 */
+export function applyIpWithPort(state, text) {
+  const r = parseIpWithPort(text);
+  if (!r) return null;
+  state.ip = r.ip;
+  state.monitorMethod = r.method;
+  state.monitorPort = r.port;
+  state.monitorPath = r.path;
+  state.monitorTouched = true; // 之後換類別不要蓋掉
+  return r;
+}
 
 // ---------------------------------------------------------------- 狀態與排序
 
@@ -190,7 +221,6 @@ export function buildPayload(s) {
   };
 }
 
-const validPort = (v) => /^\d+$/.test(v) && Number(v) >= 1 && Number(v) <= 65535;
 
 /** 回傳錯誤訊息（字串）或 null */
 export function validateStep(stepId, s) {
