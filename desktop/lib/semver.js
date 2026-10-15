@@ -46,12 +46,39 @@ export function isNewerVersion(latest, current) {
   return compareVersions(latest, current) === 1;
 }
 
+/** 這台電腦該下載哪個安裝檔：檔名結尾（對應 electron-builder.yml 的 artifactName） */
+export function installerSuffix(platform, arch) {
+  if (platform === 'darwin' && arch === 'arm64') return '-mac-arm64.dmg';
+  if (platform === 'win32' && arch === 'x64') return '-win-x64.exe';
+  return null;
+}
+
+const SHA256 = /^sha256:([0-9a-f]{64})$/;
+const RELEASE_ASSET_URL = /^https:\/\/github\.com\/[^/]+\/[^/]+\/releases\/download\//;
+
+/**
+ * 從 release 的 assets 挑出這台電腦的安裝檔；GitHub 有提供 sha256（asset.digest）才算可自動安裝。
+ * @returns {{name: string, url: string, size: number, sha256: string}|null}
+ */
+export function pickInstallerAsset(assets, suffix) {
+  if (!suffix || !Array.isArray(assets)) return null;
+  for (const a of assets) {
+    if (typeof a?.name !== 'string' || !a.name.endsWith(suffix)) continue;
+    const m = SHA256.exec(typeof a.digest === 'string' ? a.digest : '');
+    const url = typeof a.browser_download_url === 'string' ? a.browser_download_url : '';
+    if (!m || !RELEASE_ASSET_URL.test(url) || !Number.isSafeInteger(a.size) || a.size <= 0) return null;
+    return { name: a.name, url, size: a.size, sha256: m[1] };
+  }
+  return null;
+}
+
 /**
  * 查 GitHub Releases 最新版。永不丟例外。
- * @param {{currentVersion: string, repo: string, fetch: typeof fetch, timeoutMs?: number}} args
- * @returns {Promise<{status: 'available', latest: string, url: string}|{status: 'up-to-date'}|{status: 'error', message: string}>}
+ * @param {{currentVersion: string, repo: string, fetch: typeof fetch, timeoutMs?: number, suffix?: string|null}} args
+ *   suffix：安裝檔檔名結尾（installerSuffix()），有給才會挑出 asset
+ * @returns {Promise<{status: 'available', latest: string, url: string, notes: string, asset: object|null}|{status: 'up-to-date'}|{status: 'error', message: string}>}
  */
-export async function checkForUpdate({ currentVersion, repo, fetch: doFetch, timeoutMs = 10_000 }) {
+export async function checkForUpdate({ currentVersion, repo, fetch: doFetch, timeoutMs = 10_000, suffix = null }) {
   const fallbackUrl = `https://github.com/${repo}/releases`;
   try {
     const res = await doFetch(`https://api.github.com/repos/${repo}/releases/latest`, {
@@ -64,7 +91,8 @@ export async function checkForUpdate({ currentVersion, repo, fetch: doFetch, tim
     const tag = typeof body?.tag_name === 'string' ? body.tag_name : '';
     if (!isNewerVersion(tag, currentVersion)) return { status: 'up-to-date' };
     const url = typeof body.html_url === 'string' && body.html_url.startsWith('https://') ? body.html_url : fallbackUrl;
-    return { status: 'available', latest: tag.replace(/^v/, ''), url };
+    const notes = typeof body.body === 'string' ? body.body.trim().slice(0, 600) : '';
+    return { status: 'available', latest: tag.replace(/^v/, ''), url, notes, asset: pickInstallerAsset(body.assets, suffix) };
   } catch (err) {
     return { status: 'error', message: err?.message ?? String(err) };
   }

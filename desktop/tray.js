@@ -20,7 +20,7 @@ export function createTrayController({ iconsDir, platform, version, onClick, get
   };
 
   let tray = null;
-  let state = { alert: false, paused: false };
+  let state = { alert: false, paused: false, updateVersion: null, downloading: false };
   try {
     tray = new Tray(image(false));
     if (platform !== 'darwin') tray.on('click', onClick);
@@ -34,13 +34,13 @@ export function createTrayController({ iconsDir, platform, version, onClick, get
     tray.setImage(image(state.alert));
     tray.setToolTip(trayTooltip(state));
     tray.setContextMenu(
-      Menu.buildFromTemplate(buildTrayMenu({ version, alert: state.alert, paused: state.paused, settings: getSettings(), handlers: getHandlers() })),
+      Menu.buildFromTemplate(buildTrayMenu({ ...state, version, settings: getSettings(), handlers: getHandlers() })),
     );
   }
 
   render();
   return {
-    /** @param {{alert?: boolean, paused?: boolean}} next 只更新有帶的欄位；選單勾選狀態每次都重新讀取設定 */
+    /** @param {{alert?: boolean, paused?: boolean, updateVersion?: string|null, downloading?: boolean}} next 只更新有帶的欄位；選單勾選狀態每次都重新讀取設定 */
     update(next = {}) {
       state = { ...state, ...next };
       render();

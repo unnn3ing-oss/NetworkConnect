@@ -23,7 +23,10 @@ export function createDesktopNotifier({ getDevice, onClick, log }) {
   });
 }
 
-/** 一般用途的說明通知（例如 Windows 第一次隱藏到系統匣）。 */
-export function showInfoNotification(title, body) {
-  if (Notification.isSupported()) new Notification({ title, body, silent: true }).show();
+/** 一般用途的說明通知（例如 Windows 第一次隱藏到系統匣、發現新版本）。 */
+export function showInfoNotification(title, body, onClick) {
+  if (!Notification.isSupported()) return;
+  const n = new Notification({ title, body, silent: true });
+  if (onClick) n.on('click', onClick);
+  n.show();
 }

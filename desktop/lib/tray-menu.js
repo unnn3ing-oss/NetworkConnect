@@ -10,11 +10,13 @@ export function trayTooltip({ alert, paused }) {
  * @param {string} args.version
  * @param {boolean} args.alert      有關鍵設備離線
  * @param {boolean} args.paused     偵測暫停中
+ * @param {string|null} [args.updateVersion]  背景檢查發現的新版本號
+ * @param {boolean} [args.downloading]        新版本下載中
  * @param {{autoLaunch: boolean, preventSleep: boolean, lanAccess: boolean}} args.settings
  * @param {Record<string, (...a: any[]) => void>} args.handlers
  *   openMain、showMobile、pauseMonitoring、resumeMonitoring、setAutoLaunch(bool)、setPreventSleep(bool)、setLanAccess(bool)、checkUpdates、quit
  */
-export function buildTrayMenu({ version, alert, paused, settings, handlers }) {
+export function buildTrayMenu({ version, alert, paused, settings, handlers, updateVersion = null, downloading = false }) {
   const status = paused ? '偵測已暫停' : alert ? '有關鍵設備離線' : '全部正常';
   return [
     { label: `狀態：${status}`, enabled: false },
@@ -29,7 +31,9 @@ export function buildTrayMenu({ version, alert, paused, settings, handlers }) {
     { label: '偵測期間防止電腦閒置睡眠', type: 'checkbox', checked: settings.preventSleep, click: (item) => handlers.setPreventSleep(item.checked) },
     { label: '允許手機在區網連線（會重新啟動伺服器）', type: 'checkbox', checked: settings.lanAccess, click: (item) => handlers.setLanAccess(item.checked) },
     { type: 'separator' },
-    { label: '檢查更新…', click: () => handlers.checkUpdates() },
+    downloading
+      ? { label: '正在下載新版本…', enabled: false }
+      : { label: updateVersion ? `安裝新版本 ${updateVersion}…` : '檢查更新…', click: () => handlers.checkUpdates() },
     { label: `NetworkConnect ${version}`, enabled: false },
     { type: 'separator' },
     { label: '結束 NetworkConnect', click: () => handlers.quit() },

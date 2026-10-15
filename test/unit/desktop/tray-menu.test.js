@@ -81,3 +81,13 @@ test('trayTooltip', () => {
 });
 
 void noop;
+
+test('背景發現新版本時改顯示「安裝新版本 X」；下載中停用', () => {
+  const { h, calls } = handlers();
+  const item = buildTrayMenu({ ...base({ updateVersion: '0.1.20' }), handlers: h }).find((i) => i.label?.includes('安裝新版本'));
+  assert.equal(item.label, '安裝新版本 0.1.20…');
+  item.click();
+  assert.deepEqual(calls.map((c) => c[0]), ['checkUpdates']);
+  const busy = buildTrayMenu({ ...base({ updateVersion: '0.1.20', downloading: true }), handlers: h }).find((i) => i.label?.includes('下載'));
+  assert.equal(busy.enabled, false);
+});

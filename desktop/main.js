@@ -5,6 +5,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { spawn } from 'node:child_process';
 import { app, BrowserWindow, dialog, ipcMain, net, powerSaveBlocker, session, shell, utilityProcess } from 'electron';
 import { createFileLogger } from './lib/logger.js';
 import { buildMobileUrls } from './lib/lan-ip.js';
@@ -13,7 +14,8 @@ import { buildServerEnv, resolveDataDir, resolveGo2rtcPath } from './lib/paths.j
 import { createOverviewClient, looksLikeLocalNetworkDenied } from './lib/overview.js';
 import { createSupervisor } from './lib/server-supervisor.js';
 import { loadDesktopSettings, saveDesktopSettings } from './lib/settings.js';
-import { checkForUpdate } from './lib/semver.js';
+import { checkForUpdate, installerSuffix } from './lib/semver.js';
+import { buildInstallCommand, downloadInstaller, selfInstallSupport } from './lib/updater.js';
 import { isAppUrl, isSafeExternalUrl, parseActionUrl } from './lib/window-policy.js';
 import { createTrayController } from './tray.js';
 import { createDesktopNotifier, showInfoNotification } from './notify.js';
@@ -22,6 +24,8 @@ const APP_ID = 'io.github.unnn3ing-oss.networkconnect';
 const REPO = 'unnn3ing-oss/NetworkConnect';
 const PAUSE_MS = 30 * 60 * 1000;
 const STATUS_REFRESH_MS = 30 * 1000;
+const UPDATE_FIRST_CHECK_MS = 30 * 1000;
+const UPDATE_CHECK_EVERY_MS = 12 * 60 * 60 * 1000;
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const appRoot = app.getAppPath();
@@ -60,6 +64,10 @@ let sleepBlockerId = null;
 let tray = null;
 let refreshTimer = null;
 let promptedLocalNetwork = false;
+let updateTimer = null;
+let updateBusy = false;
+let availableUpdate = null; // 背景檢查發現的新版（系統匣選單顯示用）
+let pendingInstall = null; // 結束流程最後要執行的安裝指令
 const startHidden = process.argv.includes('--hidden') || app.getLoginItemSettings().wasOpenedAtLogin;
 
 const baseUrl = () => (currentPort ? `http://127.0.0.1:${currentPort}` : null);
@@ -279,26 +287,106 @@ function updateSettings(patch) {
   return settings;
 }
 
-// ---- 檢查更新 ----
-async function checkUpdates() {
-  const r = await checkForUpdate({ currentVersion: app.getVersion(), repo: REPO, fetch: (url, init) => net.fetch(url, init) });
+// ---- 檢查更新與 App 內更新 ----
+const githubFetch = (url, init) => net.fetch(url, init);
+const updateSuffix = installerSuffix(platform, process.arch);
+
+function messageBox(options) {
   const parent = mainWindow?.isVisible() ? mainWindow : undefined;
-  const box = (options) => (parent ? dialog.showMessageBox(parent, options) : dialog.showMessageBox(options));
-  if (r.status === 'available') {
-    const { response } = await box({
-      type: 'info',
-      message: `有新版本 ${r.latest}`,
-      detail: `目前版本 ${app.getVersion()}。要開啟下載頁面嗎？`,
-      buttons: ['前往下載頁', '稍後'],
-      defaultId: 0,
-      cancelId: 1,
-    });
-    if (response === 0) shell.openExternal(r.url);
-  } else if (r.status === 'up-to-date') {
-    await box({ type: 'info', message: '目前已是最新版本', detail: `版本 ${app.getVersion()}`, buttons: ['好'] });
-  } else {
-    await box({ type: 'warning', message: '無法檢查更新', detail: r.message, buttons: ['好'] });
+  return parent ? dialog.showMessageBox(parent, options) : dialog.showMessageBox(options);
+}
+
+function isWritable(p) {
+  try {
+    fs.accessSync(p, fs.constants.W_OK);
+    return true;
+  } catch {
+    return false;
   }
+}
+
+/** 背景檢查：只有發現新版時才通知，失敗不打擾 */
+async function backgroundCheckUpdates() {
+  if (updateBusy || quitting || !app.isPackaged) return;
+  const r = await checkForUpdate({ currentVersion: app.getVersion(), repo: REPO, fetch: githubFetch, suffix: updateSuffix });
+  if (r.status === 'error') log.warn(`背景檢查更新失敗：${r.message}`);
+  if (r.status !== 'available' || availableUpdate?.latest === r.latest) return;
+  availableUpdate = r;
+  log.info(`發現新版本 ${r.latest}`);
+  tray?.update({ updateVersion: r.latest });
+  showInfoNotification(`NetworkConnect 有新版本 ${r.latest}`, '在選單列／系統匣圖示選「安裝新版本」即可更新。', () => checkUpdates());
+}
+
+async function checkUpdates() {
+  if (updateBusy) return;
+  updateBusy = true;
+  try {
+    const r = await checkForUpdate({ currentVersion: app.getVersion(), repo: REPO, fetch: githubFetch, suffix: updateSuffix });
+    if (r.status === 'up-to-date') {
+      availableUpdate = null;
+      tray?.update({ updateVersion: null });
+      await messageBox({ type: 'info', message: '目前已是最新版本', detail: `版本 ${app.getVersion()}`, buttons: ['好'] });
+      return;
+    }
+    if (r.status === 'error') {
+      await messageBox({ type: 'warning', message: '無法檢查更新', detail: r.message, buttons: ['好'] });
+      return;
+    }
+    availableUpdate = r;
+    tray?.update({ updateVersion: r.latest });
+    const support = r.asset ? selfInstallSupport({ platform, exePath: app.getPath('exe'), isWritable }) : { ok: false, reason: '這個版本沒有提供可自動安裝的檔案' };
+    const detail = [`目前版本 ${app.getVersion()}`, r.notes ? `\n更新內容：\n${r.notes}` : '', support.ok ? '' : `\n無法自動安裝：${support.reason}`].join('\n').trim();
+    const buttons = support.ok ? ['下載並安裝', '查看更新內容', '稍後'] : ['前往下載頁', '稍後'];
+    const { response } = await messageBox({ type: 'info', message: `有新版本 ${r.latest}`, detail, buttons, defaultId: 0, cancelId: buttons.length - 1 });
+    const choice = buttons[response];
+    if (choice === '查看更新內容' || choice === '前往下載頁') shell.openExternal(r.url);
+    if (choice === '下載並安裝') await downloadAndInstall(r, support);
+  } finally {
+    updateBusy = false;
+  }
+}
+
+async function downloadAndInstall(update, support) {
+  const setProgress = (v) => mainWindow?.setProgressBar(v);
+  let installer;
+  try {
+    log.info(`下載新版本 ${update.latest}：${update.asset.url}`);
+    tray?.update({ updateVersion: update.latest, downloading: true });
+    installer = await downloadInstaller({ asset: update.asset, dir: path.join(userData, 'updates'), fetch: githubFetch, onProgress: setProgress });
+    log.info(`下載完成並通過 sha256 驗證：${installer}`);
+  } catch (err) {
+    log.error(`下載新版本失敗：${err.message}`);
+    await messageBox({ type: 'warning', message: '下載新版本失敗', detail: err.message, buttons: ['好'] });
+    return;
+  } finally {
+    setProgress(-1);
+    tray?.update({ downloading: false });
+  }
+  const { response } = await messageBox({
+    type: 'info',
+    message: `新版本 ${update.latest} 已下載完成`,
+    detail: 'NetworkConnect 會先結束、安裝新版，再自動重新開啟（約 10–30 秒）。設備、樓層與監視器設定都會保留。',
+    buttons: ['立即安裝並重新開啟', '稍後'],
+    defaultId: 0,
+    cancelId: 1,
+  });
+  if (response !== 0) return; // 已下載的檔案保留，下次選「安裝新版本」會直接沿用
+  const cmd = buildInstallCommand({
+    platform,
+    installer,
+    appPath: support.appPath,
+    pid: process.pid,
+    logFile: path.join(logsDir, 'update.log'),
+    scriptFile: path.join(userData, 'updates', 'install.sh'),
+  });
+  if (cmd.script) fs.writeFileSync(cmd.args[0], cmd.script, { mode: 0o700 });
+  pendingInstall = () => {
+    const child = spawn(cmd.command, cmd.args, { detached: true, stdio: 'ignore', windowsHide: true });
+    child.on('error', (err) => log.error(`啟動安裝程式失敗：${err.message}`));
+    child.unref();
+  };
+  log.info(`結束後執行安裝：${cmd.command} ${cmd.args.join(' ')}`);
+  app.quit();
 }
 
 // ---- 系統匣狀態 ----
@@ -377,6 +465,7 @@ app.on('before-quit', (e) => {
   if (quitState === 'stopping') return;
   quitState = 'stopping';
   clearInterval(refreshTimer);
+  clearInterval(updateTimer);
   log.info('結束：送出 shutdown，最多等 5 秒');
   supervisor
     .stop()
@@ -386,6 +475,13 @@ app.on('before-quit', (e) => {
       quitState = 'done';
       tray?.destroy();
       if (sleepBlockerId !== null) powerSaveBlocker.stop(sleepBlockerId);
+      if (pendingInstall) {
+        try {
+          pendingInstall();
+        } catch (err) {
+          log.error(`啟動安裝程式失敗：${err.message}`);
+        }
+      }
       desktopLog.close();
       serverLog.close();
       app.quit();
@@ -407,5 +503,7 @@ app.whenReady().then(() => {
     getSettings: () => settings,
   });
   refreshTimer = setInterval(refreshStatus, STATUS_REFRESH_MS);
+  setTimeout(backgroundCheckUpdates, UPDATE_FIRST_CHECK_MS).unref?.();
+  updateTimer = setInterval(backgroundCheckUpdates, UPDATE_CHECK_EVERY_MS);
   supervisor.start().catch((err) => log.error(`伺服器未能啟動：${err.message}`)); // 失敗畫面由 onGaveUp 負責
 });
