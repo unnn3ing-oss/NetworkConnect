@@ -96,8 +96,10 @@ export class NcVideo extends VideoRTC {
     super.onmse();
     const handler = this.onmessage.mse;
     this.onmessage.mse = (msg) => {
+      const player = this;
       const proto = window.SourceBuffer?.prototype;
       const orig = proto?.addEventListener;
+      const hadOwn = proto ? Object.prototype.hasOwnProperty.call(proto, 'addEventListener') : false;
       if (orig) {
         proto.addEventListener = function (type, fn, opts) {
           if (type !== 'updateend' || typeof fn !== 'function') return orig.call(this, type, fn, opts);
@@ -105,7 +107,9 @@ export class NcVideo extends VideoRTC {
             try {
               return fn.call(this, e);
             } catch (err) {
-              if (err?.name !== 'InvalidStateError') throw err; // 只吞「SourceBuffer 已被移除」
+              // 只吞「播放器已停止或影像來源已移除」時的 InvalidStateError；播放中的錯誤照常拋出
+              const detached = player.stopped || (!player.video?.getAttribute('src') && !player.video?.srcObject);
+              if (err?.name !== 'InvalidStateError' || !detached) throw err;
             }
           };
           return orig.call(this, type, safe, opts);
@@ -120,7 +124,10 @@ export class NcVideo extends VideoRTC {
         this.emit('error', '這個瀏覽器無法播放此影像編碼。請到 NVR 把子碼流改成 H.264。');
         this.ws?.close();
       } finally {
-        if (orig) proto.addEventListener = orig;
+        if (orig) {
+          if (hadOwn) proto.addEventListener = orig;
+          else delete proto.addEventListener; // 還原成繼承自 EventTarget，不留下多餘的屬性
+        }
       }
     };
   }

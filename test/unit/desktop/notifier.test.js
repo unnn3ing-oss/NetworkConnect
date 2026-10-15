@@ -64,3 +64,10 @@ test('payload 格式錯誤或 show 丟錯都不會讓 handler 丟例外', async 
   const boom = createNotifier({ getDevice: async () => ({ name: 'X', critical: true }), show: () => { throw new Error('no display'); }, throttle: createNotifyThrottle(), now: () => 0 });
   await boom.handleStatusChanged(ev('up', 'down'));
 });
+
+test('事件已附設備資料（伺服器轉送）時直接用，不呼叫 getDevice（設了存取密碼時查詢會被 401）', async () => {
+  const { notifier, shown, lookups } = setup({ device: null });
+  await notifier.handleStatusChanged({ ...ev('up', 'down'), device: { name: '主路由器', critical: true } });
+  assert.equal(shown.length, 1);
+  assert.deepEqual(lookups, []);
+});

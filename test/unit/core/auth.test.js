@@ -68,6 +68,17 @@ describe('已設密碼', () => {
     await app.close();
   });
 
+  test('百分比編碼的路徑（/%61pi/…）也要登入，不能繞過檢查', async () => {
+    const { app } = await bootWithPassword();
+    for (const url of ['/%61pi/secret', '/%61%70%69/secret', '/api/%73ecret', '/%2561pi/secret', '/%E0%A4%A']) {
+      const r = await app.inject(url);
+      assert.notEqual(r.statusCode, 200, `${url} 不應回 200`);
+      if (r.statusCode !== 404 && r.statusCode !== 400) assert.equal(r.statusCode, 401, url);
+    }
+    assert.equal((await app.inject('/%61pi/secret')).statusCode, 401);
+    await app.close();
+  });
+
   test('登入成功發 HttpOnly cookie，帶 cookie 後可存取', async () => {
     const { app } = await bootWithPassword();
     const login = await app.inject({ method: 'POST', url: '/api/auth/login', payload: { password: 'secret-pw' } });

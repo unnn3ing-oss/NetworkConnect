@@ -91,8 +91,12 @@ export function checkIntegrity({ collections: c, planFiles = {} }) {
   }
 
   // ---- 平面圖、落點 ----
+  const seenFiles = new Map();
   c.plans.forEach((p, i) => {
     const at = `/collections/plans/${i}`;
+    // 兩個樓層共用同一個檔名：搬檔會在 store 已寫入後失敗，刪一層的平面圖也會刪掉另一層的圖
+    if (seenFiles.has(p.file)) err(`${at}/file`, `圖檔名稱與 /collections/plans/${seenFiles.get(p.file)} 重複：${p.file}`);
+    else seenFiles.set(p.file, i);
     if (!floorIds.has(p.floorId)) err(`${at}/floorId`, `樓層不存在：${p.floorId}`);
     if (UNSAFE_FILE_NAMES.has(p.file)) err(`${at}/file`, `圖檔名稱不合法：${p.file}`);
     else if (!Object.prototype.hasOwnProperty.call(planFiles, p.file)) err(`${at}/file`, `planFiles 缺少圖檔：${p.file}`);

@@ -62,8 +62,18 @@ export function createAuth({ secrets, validate, now = Date.now, sessionMs = 30 *
       await app.register(cookie);
 
       app.addHook('onRequest', async (req) => {
-        const path = req.url.split('?')[0];
-        if (!path.startsWith('/api/') || PUBLIC_API(path)) return;
+        // 不能只看原始 URL：路由比對前會解碼 %xx（/%61pi/devices 也會命中 /api/devices），
+        // 所以優先用實際命中的路由樣式；沒命中路由時用解碼後的路徑，解碼失敗一律當成受保護。
+        const raw = req.url.split('?')[0];
+        let path = req.routeOptions?.url;
+        if (typeof path !== 'string') {
+          try {
+            path = decodeURIComponent(raw);
+          } catch {
+            path = '/api/';
+          }
+        }
+        if (!path.toLowerCase().startsWith('/api/') || PUBLIC_API(path)) return;
         if (!isAuthenticated(req)) throw unauthorized('需要登入');
       });
 

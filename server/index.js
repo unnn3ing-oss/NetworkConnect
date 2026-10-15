@@ -162,7 +162,18 @@ export async function startServer(opts = {}) {
   const parentPort = opts.parentPort !== undefined ? opts.parentPort : process.parentPort;
   if (parentPort) {
     const exit = opts.exit ?? ((code) => process.exit(code));
-    events.on('status.changed', (payload) => parentPort.postMessage({ type: 'event', name: 'status.changed', payload }));
+    // 附上設備名稱與 critical：桌面主行程設了存取密碼時不一定有登入 cookie，不能靠 REST 查
+    const devices = store.collection('devices');
+    events.on('status.changed', async (payload) => {
+      let device = null;
+      try {
+        const d = await devices.get(payload?.deviceId);
+        if (d) device = { name: d.name, critical: Boolean(d.critical) };
+      } catch {
+        // 查不到就讓桌面端退回自己查
+      }
+      parentPort.postMessage({ type: 'event', name: 'status.changed', payload: { ...payload, device } });
+    });
     parentPort.on('message', (e) => {
       const msg = e && typeof e === 'object' && 'data' in e ? e.data : e;
       if (msg && msg.type === 'shutdown') {

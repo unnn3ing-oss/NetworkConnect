@@ -150,9 +150,24 @@ export default {
       ctx.events.emit('placement.changed', { deviceId: p.deviceId, floorId: p.floorId });
     }
 
-    // 樓層被刪：刪除該層的 plan（含圖檔）與所有 placements；設備被刪：刪除其 placement
+    const devices = ctx.store.collection('devices');
+
+    // 樓層被刪：刪除該層的 plan（含圖檔）與所有 placements；設備被刪：刪除其 placement；
+    // 設備換樓層（直接改或因房間搬樓層）：舊樓層的 placement 已不對，刪掉讓它回到新樓層的「未放置」清單
     const onInventory = async (p) => {
-      if (!p || p.op !== 'delete' || p.id === '*') return;
+      if (!p || p.id === '*') return;
+      if (p.op === 'update' && p.collection === 'devices') {
+        try {
+          const pl = await placements.get(p.id);
+          if (!pl) return;
+          const d = await devices.get(p.id);
+          if (d?.floorId && d.floorId !== pl.floorId) await dropPlacement(pl); // 沒指定樓層的設備不動
+        } catch (err) {
+          ctx.log.error({ err }, `floorplan 清理失敗：${err.message}`);
+        }
+        return;
+      }
+      if (p.op !== 'delete') return;
       try {
         if (p.collection === 'floors') {
           const plan = await plans.get(p.id);

@@ -89,6 +89,14 @@ describe('checkIntegrity', () => {
     assert.ok(p.includes('/collections/plans/3/file'), '危險檔名');
     assert.ok(p.includes('/planFiles/flr_1.png'), 'base64 不合法');
   });
+
+  test('平面圖：兩個樓層共用同一個圖檔名稱', () => {
+    const d = sample();
+    const first = d.collections.plans[0];
+    d.collections.plans.push({ ...first, floorId: d.collections.floors.find((f) => f.id !== first.floorId).id });
+    const p = paths(checkIntegrity(d));
+    assert.ok(p.includes(`/collections/plans/${d.collections.plans.length - 1}/file`));
+  });
 });
 
 describe('mergeBuiltinCategories', () => {

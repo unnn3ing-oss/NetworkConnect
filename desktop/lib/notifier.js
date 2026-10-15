@@ -17,7 +17,8 @@ export function createNotifier({ getDevice, show, throttle, now = Date.now, log 
         const { from, to } = payload;
         // 只有「變成 down」與「down → up」可能需要通知；其他轉換不必查設備資料
         if (!(to === 'down' || (from === 'down' && to === 'up'))) return;
-        const device = await getDevice(payload.deviceId);
+        // 伺服器轉送時已附上設備資料（不需登入）；舊版或查不到時才走 getDevice
+        const device = payload.device ?? (await getDevice(payload.deviceId));
         const n = buildNotification({ payload, device });
         if (!n) return;
         if (!throttle.tryAcquire(payload.deviceId, now())) return;

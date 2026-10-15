@@ -217,6 +217,19 @@ describe('DELETE /api/plans/:floorId 與連帶清除', () => {
     assert.ok(seen.some(([n, p]) => n === 'placement.changed' && p.deviceId === d2));
   });
 
+  test('設備改到別的樓層 → 刪除舊樓層的 placement；只改名稱不動', async () => {
+    const d3 = (await postJson('/api/devices', { name: 'Cam', categoryId: 'cat_other', floorId: floorA })).json.id;
+    await putJson(`/api/placements/${d3}`, { floorId: floorA, x: 0.3, y: 0.3 });
+    const patch = (body) => inject({ method: 'PATCH', url: `/api/devices/${d3}`, payload: body, headers: { 'content-type': 'application/json' } });
+    assert.equal((await patch({ name: 'Cam 2' })).status, 200);
+    await new Promise((r) => setTimeout(r, 100));
+    assert.ok((await getJson('/api/placements')).json.some((p) => p.deviceId === d3), '只改名稱不應刪落點');
+    seen = [];
+    assert.equal((await patch({ floorId: floorB, roomId: null })).status, 200);
+    await waitFor(async () => (await getJson('/api/placements')).json.every((p) => p.deviceId !== d3), { message: '舊樓層落點未被清除' });
+    assert.ok(seen.some(([n, p]) => n === 'placement.changed' && p.deviceId === d3));
+  });
+
   test('刪樓層 → 刪除該層的 plan（含圖檔）與 placements，其他樓層不受影響', async () => {
     const fl = (await postJson('/api/floors', { name: 'C' })).json.id;
     await upload(fl, 'c.webp', webpLossy(64, 64));
