@@ -87,11 +87,30 @@ export class NcVideo extends VideoRTC {
   /**
    * VideoRTC 的 MSE 處理在瀏覽器不支援該編碼時（例：沒有 H.265 解碼器）會在 addSourceBuffer 丟出未處理的例外，
    * 之後的影像資料又因為 ondata 沒設定而再丟一次。這裡接住它，改成在格子上顯示說明。
+   *
+   * 另外 VideoRTC 的 updateend 監聽會讀 sb.buffered；播放器停止或重連時 video 的來源被移除、SourceBuffer 跟著被移除，
+   * 若此時還有排隊中的 updateend 就會丟 InvalidStateError（未處理的 pageerror）。vendored 檔不能手改，
+   * 所以在 handler 執行期間暫時包住 SourceBuffer 的 addEventListener，把這個例外吞掉。
    */
   onmse() {
     super.onmse();
     const handler = this.onmessage.mse;
     this.onmessage.mse = (msg) => {
+      const proto = window.SourceBuffer?.prototype;
+      const orig = proto?.addEventListener;
+      if (orig) {
+        proto.addEventListener = function (type, fn, opts) {
+          if (type !== 'updateend' || typeof fn !== 'function') return orig.call(this, type, fn, opts);
+          const safe = function (e) {
+            try {
+              return fn.call(this, e);
+            } catch (err) {
+              if (err?.name !== 'InvalidStateError') throw err; // 只吞「SourceBuffer 已被移除」
+            }
+          };
+          return orig.call(this, type, safe, opts);
+        };
+      }
       try {
         handler(msg);
       } catch (err) {
@@ -100,6 +119,8 @@ export class NcVideo extends VideoRTC {
         this.ondata = () => {};
         this.emit('error', '這個瀏覽器無法播放此影像編碼。請到 NVR 把子碼流改成 H.264。');
         this.ws?.close();
+      } finally {
+        if (orig) proto.addEventListener = orig;
       }
     };
   }

@@ -107,13 +107,14 @@ describe('devices 頁（Chromium）', async () => {
     await page.waitForFunction(() => document.querySelector('.dv-card[data-id="dev_router"] .nc-status')?.dataset.state === 'up');
     assert.equal(await dot('dev_router').getAttribute('data-state'), 'up');
     assert.equal(await dot('dev_printer').getAttribute('data-state'), 'offline'); // 非關鍵設備離線：灰色「離線」
-    assert.equal(await dot('dev_swcore').getAttribute('data-state'), 'unknown'); // 沒有資料 → 未知
 
     await page.evaluate(() => window.__NC__.bus.emit('status.changed', { deviceId: 'dev_router', from: 'up', to: 'down', rttMs: null, at: '2026-10-14T08:30:00.000Z' }));
     await page.waitForFunction(() => document.querySelector('.dv-card[data-id="dev_router"] .nc-status')?.dataset.state === 'down'); // 關鍵設備離線：紅色
     // status.snapshot 重建全部
     await page.evaluate(() => window.__NC__.bus.emit('status.snapshot', { items: [{ deviceId: 'dev_router', state: 'up', rttMs: 1, lastCheckAt: null, lastChangeAt: null, consecutiveFailures: 0 }] }));
     await page.waitForFunction(() => document.querySelector('.dv-card[data-id="dev_router"] .nc-status')?.dataset.state === 'up');
+    // snapshot 沒有的設備 → 未知（放在 snapshot 之後斷言：mock 模式的偵測是真的在跑，初始狀態可能已被測成 up）
+    assert.equal(await dot('dev_swcore').getAttribute('data-state'), 'unknown');
     assert.deepEqual(problems, []);
 
     // 偵測不可用：/api/status 404（monitor 停用或不可用）
