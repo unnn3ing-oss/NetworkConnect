@@ -14,7 +14,7 @@ import { pipeline } from 'node:stream/promises';
  * @returns {Promise<string>} 安裝檔路徑
  */
 export async function downloadInstaller({ asset, dir, fetch: doFetch, onProgress = () => {}, timeoutMs = 15 * 60_000 }) {
-  if (path.basename(asset.name) !== asset.name) throw new Error(`安裝檔名稱不合法：${asset.name}`);
+  if (!/^[\w.-]+$/.test(asset.name) || asset.name.startsWith('.')) throw new Error(`安裝檔名稱不合法：${asset.name}`);
   fs.mkdirSync(dir, { recursive: true });
   const file = path.join(dir, asset.name);
   for (const f of fs.readdirSync(dir)) {
@@ -54,10 +54,10 @@ export async function sha256File(file) {
   return hash.digest('hex');
 }
 
-/** 執行檔 …/X.app/Contents/MacOS/X → …/X.app；不是 .app 結構回 null */
+/** 執行檔 …/X.app/Contents/MacOS/X → …/X.app；不是 .app 結構回 null（Mac 路徑，一律用 POSIX 規則） */
 export function macAppBundle(exePath) {
-  const bundle = path.resolve(exePath, '..', '..', '..');
-  return bundle.endsWith('.app') && path.basename(path.dirname(exePath)) === 'MacOS' ? bundle : null;
+  const bundle = path.posix.resolve(exePath, '..', '..', '..');
+  return bundle.endsWith('.app') && path.posix.basename(path.posix.dirname(exePath)) === 'MacOS' ? bundle : null;
 }
 
 /**
@@ -73,7 +73,7 @@ export function selfInstallSupport({ platform, exePath, isWritable }) {
   if (appPath.startsWith('/Volumes/') || appPath.includes('/AppTranslocation/')) {
     return { ok: false, reason: 'App 目前不是從「應用程式」資料夾執行（例如直接從 dmg 開啟）。請先把 NetworkConnect 拖到「應用程式」資料夾再開啟。' };
   }
-  if (!isWritable(path.dirname(appPath)) || !isWritable(appPath)) {
+  if (!isWritable(path.posix.dirname(appPath)) || !isWritable(appPath)) {
     return { ok: false, reason: `沒有權限覆寫 ${appPath}` };
   }
   return { ok: true, appPath };
