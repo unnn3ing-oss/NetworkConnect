@@ -132,6 +132,15 @@ describe('範本與 CRUD', () => {
     }
   });
 
+  test('內建品牌也能改 RTSP 埠（NVR 改過預設 554 時）', async () => {
+    const { call, f } = await boot();
+    const { json: nvr } = await call('POST', '/api/nvrs', { ...NEW, brand: 'hisharp', port: 10554, password: 'pw', channelCount: 1 });
+    assert.equal(nvr.port, 10554);
+    assert.equal(f.streams.get(`nvr_${nvr.id}_1_sub`), 'rtsp://admin:pw@192.168.1.20:10554/chID=1&streamType=sub&linkType=tcp');
+    await call('PATCH', `/api/nvrs/${nvr.id}`, { port: 20554 });
+    assert.equal(f.streams.get(`nvr_${nvr.id}_1_sub`), 'rtsp://admin:pw@192.168.1.20:20554/chID=1&streamType=sub&linkType=tcp');
+  });
+
   test('自訂品牌：使用 urlTemplate；{ch:02} 與帳密編碼', async () => {
     const { call, f } = await boot();
     const r = await call('POST', '/api/nvrs', {

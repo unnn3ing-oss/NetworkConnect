@@ -86,7 +86,7 @@ export async function openNvrWizard(ctx, uiLib, { nvr = null, onDone, onClose } 
     const nodes = [
       field(state, { name: 'name', label: 'NVR 名稱', placeholder: '例：家用 NVR', required: true }),
       field(state, { name: 'host', label: '主機位址', placeholder: '192.168.1.20', hint: 'NVR 的 IP 或網域名稱（不含 rtsp://）', required: true }),
-      field(state, { name: 'port', label: 'RTSP 埠', type: 'number', hint: '預設 554', required: true }),
+      field(state, { name: 'port', label: 'RTSP 埠', type: 'number', hint: '預設 554。如果你在 NVR 改過 RTSP 埠，請填改過的號碼（不是網頁或手機 App 用的埠）', required: true }),
       field(state, { name: 'username', label: '帳號', required: true }),
       field(state, {
         name: 'password', label: '密碼', type: 'password', required: !editing,
