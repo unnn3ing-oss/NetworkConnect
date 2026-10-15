@@ -116,13 +116,14 @@ describe('範本與 CRUD', () => {
     assert.equal(f.streams.get(`nvr_${nvr.id}_2_sub`), `rtsp://${enc}@192.168.1.20:554/Streaming/Channels/202`);
   });
 
-  test('四個品牌各建一台：主／子碼流 URL 正確', async () => {
+  test('五個內建品牌各建一台：主／子碼流 URL 正確', async () => {
     const { call, f } = await boot();
     const expect = {
       hikvision: ['/Streaming/Channels/101', '/Streaming/Channels/102'],
       dahua: ['/cam/realmonitor?channel=1&subtype=0', '/cam/realmonitor?channel=1&subtype=1'],
       uniview: ['/unicast/c1/s0/live', '/unicast/c1/s1/live'],
       reolink: ['/h264Preview_01_main', '/h264Preview_01_sub'],
+      hisharp: ['/chID=1&streamType=main&linkType=tcp', '/chID=1&streamType=sub&linkType=tcp'],
     };
     for (const [brand, [main, sub]] of Object.entries(expect)) {
       const { json: nvr } = await call('POST', '/api/nvrs', { ...NEW, brand, password: 'pw', channelCount: 1 });

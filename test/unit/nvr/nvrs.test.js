@@ -90,6 +90,8 @@ describe('test()（注入假 client）', () => {
     assert.deepEqual(targets, [{ host: '10.0.0.5', port: 554 }]);
     await make(client, { rtspFix }).test('nvr_t', 1);
     assert.equal(calls.at(-1), 'rtsp://a:pw@10.0.0.5:554/Streaming/Channels/102');
+    await make(client, { brand: 'hisharp', rtspFix }).test('nvr_t', 1);
+    assert.equal(calls.at(-1), 'rtsp://a:pw@127.0.0.1:40123/chID=1&streamType=2&linkType=tcp#backchannel=0', '昇銳也經由代理');
     await make(client, { brand: 'custom', urlTemplate: 'rtsps://{host}/x', rtspFix }).test('nvr_t', 1);
     assert.equal(calls.at(-1), 'rtsps://10.0.0.5/x', 'rtsps 加密連線無法修改，直連');
   });

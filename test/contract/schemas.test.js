@@ -62,7 +62,7 @@ describe('fixtures 通過 schema', () => {
   test('nvr-templates.json 符合 TemplateList 且含規格 §8.4 的品牌', () => {
     const tpl = readJson('nvr-templates.json');
     assertValid('api-nvr#TemplateList', tpl);
-    assert.deepEqual(tpl.map((t) => t.id), ['hikvision', 'dahua', 'uniview', 'reolink', 'custom']);
+    assert.deepEqual(tpl.map((t) => t.id), ['hikvision', 'dahua', 'uniview', 'reolink', 'hisharp', 'custom']);
   });
 
   test('export 格式可由 db.sample.json 組成', () => {

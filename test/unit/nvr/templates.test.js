@@ -15,6 +15,7 @@ describe('buildUrl：四個品牌 × 主／子碼流', () => {
     { brand: 'dahua', ch: 3, main: 'rtsp://admin:secret@192.168.1.20:554/cam/realmonitor?channel=3&subtype=0', sub: 'rtsp://admin:secret@192.168.1.20:554/cam/realmonitor?channel=3&subtype=1' },
     { brand: 'uniview', ch: 2, main: 'rtsp://admin:secret@192.168.1.20:554/unicast/c2/s0/live', sub: 'rtsp://admin:secret@192.168.1.20:554/unicast/c2/s1/live' },
     { brand: 'reolink', ch: 1, main: 'rtsp://admin:secret@192.168.1.20:554/h264Preview_01_main', sub: 'rtsp://admin:secret@192.168.1.20:554/h264Preview_01_sub' },
+    { brand: 'hisharp', ch: 2, main: 'rtsp://admin:secret@192.168.1.20:554/chID=2&streamType=main&linkType=tcp', sub: 'rtsp://admin:secret@192.168.1.20:554/chID=2&streamType=sub&linkType=tcp' },
     { brand: 'reolink', ch: 11, main: 'rtsp://admin:secret@192.168.1.20:554/h264Preview_11_main', sub: 'rtsp://admin:secret@192.168.1.20:554/h264Preview_11_sub' },
   ];
   for (const c of cases) {
@@ -27,7 +28,7 @@ describe('buildUrl：四個品牌 × 主／子碼流', () => {
 
   test('模板清單與契約 fixture 一致，且涵蓋四個品牌＋自訂', () => {
     assert.deepEqual(loadTemplates(), readFixture('nvr-templates.json'));
-    assert.deepEqual(loadTemplates().map((t) => t.id), ['hikvision', 'dahua', 'uniview', 'reolink', 'custom']);
+    assert.deepEqual(loadTemplates().map((t) => t.id), ['hikvision', 'dahua', 'uniview', 'reolink', 'hisharp', 'custom']);
   });
 
   test('{ch:02} 補零；可傳字串模板', () => {

@@ -12,6 +12,9 @@ const trimTemplate = (t) => (typeof t === 'string' ? t.trim() : t);
 
 const nowSecretKey = (id) => `nvr:${id}`;
 
+/** 經由 RTSP 相容代理的品牌（見 rtsp-fix-proxy.js：昇銳的 SDP 把影像軌標成 sendonly） */
+const RTSP_FIX_BRANDS = new Set(['hisharp', 'custom']);
+
 const H265_WARNING = '偵測到 H.265。瀏覽器對 H.265 支援不穩，請將 NVR 的子碼流改為 H.264 後再試。';
 
 /** 探測失敗 → 給使用者看的原因（區分：連不到主機、帳密錯誤、逾時、其他） */
@@ -67,10 +70,10 @@ export function createNvrService({ ctx, client, rtspFix = null }) {
   const view = (nvr) => ({ ...nvr, hasPassword: ctx.secrets.has(nowSecretKey(nvr.id)) });
 
   // ---------------------------------------------------------------- 串流註冊
-  /** 交給 go2rtc 的來源網址：自訂品牌（未驗證過的 NVR）改走 RTSP 相容代理，內建品牌直連 */
+  /** 交給 go2rtc 的來源網址：昇銳與自訂品牌（未驗證過的 NVR）改走 RTSP 相容代理，其他內建品牌直連 */
   async function streamSrc(nvr, password, ch, kind) {
     const url = buildStreamUrl(nvr, password, ch, kind);
-    if (!rtspFix || nvr.brand !== 'custom') return url;
+    if (!rtspFix || !RTSP_FIX_BRANDS.has(nvr.brand)) return url;
     const route = routeThroughProxy(url);
     return route ? route.build(await rtspFix.portFor(route.target)) : url;
   }

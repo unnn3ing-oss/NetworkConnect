@@ -17,7 +17,7 @@
         "id": { "$ref": "common.schema.json#/$defs/NvrId" }
       }
     },
-    "Brand": { "type": "string", "enum": ["hikvision", "dahua", "uniview", "reolink", "custom"] },
+    "Brand": { "type": "string", "enum": ["hikvision", "dahua", "uniview", "reolink", "hisharp", "custom"] },
     "Channel": {
       "type": "object",
       "additionalProperties": false,

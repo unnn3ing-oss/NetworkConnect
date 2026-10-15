@@ -36,6 +36,15 @@
     "notes": "頻道以兩位數表示（01、02…）。需在裝置網頁開啟 RTSP 功能。"
   },
   {
+    "id": "hisharp",
+    "name": "HiSharp 昇銳（含 TVT 同為）",
+    "urlTemplate": "rtsp://{u}:{p}@{host}:{port}/chID={ch}&streamType={s}&linkType=tcp",
+    "defaultPort": 554,
+    "streamMain": "main",
+    "streamSub": "sub",
+    "notes": "streamType main 為主碼流、sub 為子碼流。若連不上，可改選「自訂」並把網址中的 streamType 改成小寫 streamtype。"
+  },
+  {
     "id": "custom",
     "name": "自訂",
     "urlTemplate": null,
