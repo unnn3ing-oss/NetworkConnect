@@ -282,6 +282,23 @@ describe('cameras 頁（Chromium）', async () => {
     assert.deepEqual(await t.api('/api/nvrs'), []);
   });
 
+  test('精靈：先選昇銳再改選自訂，自訂 RTSP 網址與碼流代號帶入昇銳的預設', { skip }, async () => {
+    const t = await boot({ withNvr: false, codec: 'avc1.640029' });
+    await t.page.waitForSelector('.nc-empty');
+    await t.page.click('.nc-empty button:has-text("新增 NVR")');
+    await t.page.waitForSelector('.nc-wizard');
+    await t.page.click('.nc-op:has-text("昇銳")');
+    await t.page.click('.nc-op:has-text("自訂")');
+    await t.page.click('.nc-wizard [data-action="next"]');
+    const field = (label) => t.page.locator(`.nc-field:has(.nc-field-label:text-is("${label}")) input`).first();
+    assert.equal(await field('自訂 RTSP 網址').inputValue(), 'rtsp://{u}:{p}@{host}:{port}/chID={ch}&streamType={s}&linkType=tcp');
+    assert.equal(await field('主碼流代號（{s}）').inputValue(), 'main');
+    assert.equal(await field('子碼流代號（{s}）').inputValue(), 'sub');
+    assert.equal(await field('RTSP 埠').inputValue(), '554');
+    await t.page.click('.nc-wizard [data-action="cancel"]');
+    await t.page.waitForSelector('.nc-wizard', { state: 'detached' });
+  });
+
   /** 逐步走精靈到「測試」步驟 */
   async function fillWizardToTest(t, { brand = 'Hikvision', password = 'p@ss:w/rd' } = {}) {
     await t.page.click('button:has-text("新增 NVR")');

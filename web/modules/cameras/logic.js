@@ -109,13 +109,29 @@ export function stateFromNvr(nvr, templates = []) {
   };
 }
 
-/** 選品牌時帶入模板預設值（自訂品牌保留使用者已輸入的 URL） */
-export function applyBrand(state, template) {
+/** 自訂品牌沒有可沿用的網址時，預先帶入的開頭 */
+export const CUSTOM_URL_STARTER = 'rtsp://{u}:{p}@{host}:{port}/';
+
+/**
+ * 選品牌時帶入模板預設值。
+ * 改選「自訂」時，若網址還是空的，帶入剛才那個品牌的 RTSP 網址與碼流代號，只要改不同的地方就好；
+ * 自訂品牌保留使用者已輸入的 URL。
+ * @param {object} [from] 切換前的品牌模板
+ */
+export function applyBrand(state, template, from = null) {
   state.brand = template.id;
   state.port = String(template.defaultPort);
-  state.streamMain = template.streamMain;
-  state.streamSub = template.streamSub;
-  if (template.id !== 'custom') state.urlTemplate = '';
+  if (template.id !== 'custom') {
+    state.urlTemplate = '';
+    state.streamMain = template.streamMain;
+    state.streamSub = template.streamSub;
+    return;
+  }
+  if (state.urlTemplate.trim()) return;
+  const base = from?.urlTemplate ? from : null;
+  state.urlTemplate = base?.urlTemplate ?? CUSTOM_URL_STARTER;
+  state.streamMain = base?.streamMain ?? template.streamMain;
+  state.streamSub = base?.streamSub ?? template.streamSub;
 }
 
 const HOST_RE = /^([A-Za-z0-9]([A-Za-z0-9._-]*[A-Za-z0-9])?|\[?[0-9A-Fa-f:.]+\]?)$/;

@@ -56,9 +56,7 @@ export async function openNvrWizard(ctx, uiLib, { nvr = null, onDone, onClose } 
       value: state.brand,
       ariaLabel: '品牌',
       onChange: (id) => {
-        const wasCustom = state.brand === 'custom';
-        applyBrand(state, templateOf(id));
-        if (wasCustom && id !== 'custom') state.urlTemplate = '';
+        applyBrand(state, templateOf(id), templateOf(state.brand));
         paintNote();
       },
     });
@@ -96,7 +94,7 @@ export async function openNvrWizard(ctx, uiLib, { nvr = null, onDone, onClose } 
     ];
     if (state.brand === 'custom') {
       nodes.push(
-        field(state, { name: 'urlTemplate', label: '自訂 RTSP 網址', placeholder: 'rtsp://{u}:{p}@{host}:{port}/路徑{ch}/{s}', hint: '可用 {u} {p} {host} {port} {ch} {ch:02}（兩位數）{s}（碼流）', required: true }),
+        field(state, { name: 'urlTemplate', label: '自訂 RTSP 網址', placeholder: 'rtsp://{u}:{p}@{host}:{port}/路徑{ch}/{s}', hint: '已帶入剛才所選品牌的網址，只要改不同的地方。可用 {u} {p} {host} {port} {ch} {ch:02}（兩位數）{s}（碼流）', required: true }),
         field(state, { name: 'streamMain', label: '主碼流代號（{s}）', required: true }),
         field(state, { name: 'streamSub', label: '子碼流代號（{s}）', required: true }),
       );

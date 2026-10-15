@@ -3,7 +3,7 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFixture } from '../../../contracts/index.js';
 import {
-  applyBrand, applyLimit, clampLimit, clampQuality, clampSplit, connectionPayload, connectionSignature, describeTest, ensureChannels, flattenChannels,
+  CUSTOM_URL_STARTER, applyBrand, applyLimit, clampLimit, clampQuality, clampSplit, connectionPayload, connectionSignature, describeTest, ensureChannels, flattenChannels,
   gridCols, newWizardState, pageCount, pageSlice, parseTarget, previewUrl, selectedKeys, stateFromNvr, streamName, validateChannels,
   validateConnection, wsPath,
 } from '../../../web/modules/cameras/logic.js';
@@ -115,6 +115,21 @@ describe('精靈表單', () => {
     s.urlTemplate = 'rtsp://x';
     applyBrand(s, templates.find((t) => t.id === 'dahua'));
     assert.equal(s.urlTemplate, '', '離開自訂品牌時清掉自訂 URL');
+  });
+
+  test('applyBrand：改選自訂時帶入剛才品牌的網址與碼流代號；已輸入的自訂網址不覆蓋', () => {
+    const t = (id) => templates.find((x) => x.id === id);
+    const s = newWizardState(templates);
+    applyBrand(s, t('hisharp'));
+    applyBrand(s, t('custom'), t('hisharp'));
+    assert.deepEqual([s.urlTemplate, s.streamMain, s.streamSub], [t('hisharp').urlTemplate, 'main', 'sub']);
+    s.urlTemplate = 'rtsp://{u}:{p}@{host}:{port}/mine/{ch}';
+    applyBrand(s, t('custom'), t('custom'));
+    assert.equal(s.urlTemplate, 'rtsp://{u}:{p}@{host}:{port}/mine/{ch}');
+    const fresh = newWizardState(templates);
+    applyBrand(fresh, t('custom'));
+    assert.equal(fresh.urlTemplate, CUSTOM_URL_STARTER);
+    assert.deepEqual([fresh.streamMain, fresh.streamSub], ['0', '1']);
   });
 
   test('stateFromNvr：編輯時密碼留空、沿用 hasPassword', () => {
