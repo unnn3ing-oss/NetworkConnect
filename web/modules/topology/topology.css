@@ -1,0 +1,50 @@
+/* topology 模組樣式：只用 web/ui 的 token；不使用行內樣式（CSP style-src 'self'）。 */
+
+.tp { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.tp-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+.tp-title { margin: 0; font-size: 22px; flex: 1 1 auto; }
+.tp-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.tp-tools[hidden], .tp-legend[hidden], .tp-warn[hidden], .tp-empty[hidden], .tp-error[hidden], .tp-stage[hidden] { display: none; }
+.tp-btn, .tp-group { display: inline-flex; align-items: center; gap: 6px; }
+
+/* Cytoscape 會自己加這個 class；它原本要塞行內 <style>，CSP 不允許，所以改在這裡定義 */
+.__________cytoscape_container { position: relative; }
+
+.tp-body { position: relative; min-width: 0; }
+.tp-stage {
+  height: clamp(420px, calc(100vh - 260px), 900px);
+  min-height: 420px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
+  background: var(--surface);
+  overflow: hidden;
+  touch-action: none;
+}
+.tp-empty .nc-empty { margin-inline: auto; }
+.tp-error {
+  display: flex; align-items: center; gap: 12px; margin-top: 12px; padding: 12px 16px;
+  border: 1px solid var(--danger); border-radius: var(--radius-s); background: var(--danger-soft); color: var(--text);
+}
+.tp-error p { margin: 0; flex: 1 1 auto; }
+
+.tp-warn {
+  display: flex; align-items: center; gap: 8px; padding: 8px 14px;
+  border-radius: var(--radius-s); background: var(--warn-soft); color: var(--warn-fg); font-size: 14px;
+}
+
+/* ---- 圖例 ---- */
+.tp-legend { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 0; padding: 0; list-style: none; color: var(--muted); font-size: 13px; }
+.tp-legend li { display: inline-flex; align-items: center; gap: 6px; }
+.tp-key { display: inline-block; width: 26px; height: 0; border-top: 2px solid var(--muted); }
+.tp-key-dash { border-top-style: dashed; }
+.tp-key-poe { border-top-color: var(--warn); }
+.tp-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
+.tp-dot-up { background: var(--st-up); }
+.tp-dot-down { background: var(--st-down); }
+.tp-dot-offline { background: var(--st-offline); }
+.tp-dot-unknown { background: var(--st-unknown); }
+
+@media (max-width: 820px) {
+  .tp-stage { height: clamp(360px, calc(100vh - 300px), 700px); min-height: 360px; }
+  .tp-title { flex-basis: 100%; }
+}
