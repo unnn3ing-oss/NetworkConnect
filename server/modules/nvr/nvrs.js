@@ -298,7 +298,11 @@ export function createNvrService({ ctx, client }) {
     async status() {
       try {
         const info = await client.info({ timeout: 1500 });
-        return { running: true, version: typeof info?.version === 'string' ? info.version : null, mode: mode() };
+        const out = { running: true, version: typeof info?.version === 'string' ? info.version : null, mode: mode() };
+        // 串流數只是附加資訊，查不到不影響 running 判斷
+        const streams = await client.listStreams().catch(() => null);
+        if (streams) out.streams = Object.keys(streams).filter((n) => n.startsWith('nvr_')).length;
+        return out;
       } catch {
         return { running: false, version: null, mode: mode() };
       }

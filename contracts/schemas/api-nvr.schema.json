@@ -68,7 +68,8 @@
       "properties": {
         "running": { "type": "boolean", "description": "go2rtc 是否可連線" },
         "version": { "type": ["string", "null"], "description": "go2rtc 回報的版本；未連線為 null" },
-        "mode": { "type": "string", "enum": ["managed", "external", "none"], "description": "managed＝由本程式啟動；external＝連 go2rtcUrl；none＝未設定" }
+        "mode": { "type": "string", "enum": ["managed", "external", "none"], "description": "managed＝由本程式啟動；external＝連 go2rtcUrl；none＝未設定" },
+        "streams": { "type": "integer", "minimum": 0, "description": "go2rtc 目前已註冊的本程式串流數（nvr_ 開頭）；未連線時省略" }
       }
     }
   }

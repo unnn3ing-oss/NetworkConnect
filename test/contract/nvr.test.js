@@ -404,7 +404,13 @@ describe('狀態與模組狀態', () => {
     const r = await call('GET', '/api/nvr/status');
     assert.equal(r.status, 200);
     v.assert('api-nvr#NvrStatus', r.json);
-    assert.deepEqual(r.json, { running: true, version: '1.9.14-fake', mode: 'external' });
+    const { streams, ...rest } = r.json;
+    assert.deepEqual(rest, { running: true, version: '1.9.14-fake', mode: 'external' });
+    assert.ok(Number.isInteger(streams) && streams >= 0);
+    const created = await call('POST', '/api/nvrs', NEW);
+    assert.equal(created.status, 201);
+    const after = (await call('GET', '/api/nvr/status')).json;
+    assert.ok(after.streams > streams, '新增 NVR 後已註冊串流數應增加');
   });
 
   test('check()：連不到 go2rtc 時模組仍啟用，/api/system/modules 顯示「串流服務未啟動」；status.running=false', async () => {
@@ -558,7 +564,7 @@ http.createServer((req, res) => { res.setHeader('content-type', 'application/jso
     assert.match(yaml, /webrtc:\n {2}listen: ""/);
 
     const status = await (await fetch(`${s.url}/api/nvr/status`)).json();
-    assert.deepEqual(status, { running: true, version: 'managed-fake', mode: 'managed' });
+    assert.deepEqual(status, { running: true, version: 'managed-fake', mode: 'managed', streams: 0 });
 
     await s.stop();
     stopped = true;

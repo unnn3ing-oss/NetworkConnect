@@ -54,7 +54,8 @@ describe('startServer：基本行為', () => {
   test('/api/system/modules 列出所有模組為 ok', async () => {
     const s = await boot();
     const r = await get(`${s.url}/api/system/modules`);
-    assert.deepEqual(r.json(), MODULE_NAMES.map((name) => ({ name, state: 'ok' })));
+    // note 是模組自訂的附加說明（例如 nvr 在 go2rtc 未啟動時的提示），不影響 state
+    assert.deepEqual(r.json().map(({ name, state }) => ({ name, state })), MODULE_NAMES.map((name) => ({ name, state: 'ok' })));
   });
 
   test('config.json 的 modules 可停用模組', async () => {
