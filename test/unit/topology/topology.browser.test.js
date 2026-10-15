@@ -197,6 +197,44 @@ describe('架構圖（Chromium）', async () => {
     assert.ok(z > 0);
   });
 
+  test('重新排版：按幾次都一樣（不會越排越大、畫面越縮越小），分群模式也一樣', { skip }, async () => {
+    const { page, problems } = await boot();
+    await ready(page);
+    const measure = () => page.evaluate(() => {
+      const cy = document.querySelector('.tp-stage').__cy;
+      const bb = cy.nodes().boundingBox();
+      return { zoom: Number(cy.zoom().toFixed(4)), w: Math.round(bb.w), h: Math.round(bb.h) };
+    });
+    for (const grouped of [false, true]) {
+      if (grouped) {
+        await page.click('.tp-group');
+        await page.waitForFunction(() => document.querySelector('.tp-stage').__cy.nodes('.floor').length > 0);
+      }
+      const first = await measure();
+      for (let i = 0; i < 4; i++) await page.click('button:has-text("重新排版")');
+      assert.deepEqual(await measure(), first, grouped ? '分群' : '不分群');
+      assert.deepEqual(await overlaps(page), []);
+    }
+    assert.deepEqual(problems, []);
+  });
+
+  test('連線樣式：直線／直角切換，記住設定，重新整理後仍是直角', { skip }, async () => {
+    const { page, problems } = await boot();
+    await ready(page);
+    const curve = () => page.evaluate(() => document.querySelector('.tp-stage').__cy.edges()[0].style('curve-style'));
+    assert.equal(await curve(), 'bezier');
+    await page.getByRole('radio', { name: '直角' }).click();
+    assert.equal(await curve(), 'taxi');
+    await shot(page, 'topology-orthogonal.png');
+    await page.reload();
+    await ready(page);
+    assert.equal(await curve(), 'taxi');
+    assert.equal(await page.getByRole('radio', { name: '直角' }).getAttribute('aria-checked'), 'true');
+    await page.getByRole('radio', { name: '直線' }).click();
+    assert.equal(await curve(), 'bezier');
+    assert.deepEqual(problems, []);
+  });
+
   test('深色主題：切換 data-theme 後樣式重套（邊標籤底色跟著 --surface）', { skip }, async () => {
     const { page, problems } = await boot();
     await ready(page);

@@ -6,6 +6,7 @@
 .tp-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .tp-tools[hidden], .tp-legend[hidden], .tp-warn[hidden], .tp-empty[hidden], .tp-error[hidden], .tp-stage[hidden] { display: none; }
 .tp-btn, .tp-group { display: inline-flex; align-items: center; gap: 6px; }
+.tp-edge { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; }
 
 /* Cytoscape 會自己加這個 class；它原本要塞行內 <style>，CSP 不允許，所以改在這裡定義 */
 .__________cytoscape_container { position: relative; }

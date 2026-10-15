@@ -2,10 +2,13 @@
 // createTopologyView() 回傳 destroy()；所有 bus 訂閱、計時器、觀察者、cy 實例都在 destroy() 中釋放。
 import { buildElements, fadedIds, statusClass, STATUS_CLASSES } from './graph.js';
 import { buildStyle, readColors } from './style.js';
-import { bandLayout, levelsByY, tidyX } from './layout.js';
+import { bandLayout, tidyX, treeOrder } from './layout.js';
 
 const CSS_ATTR = 'data-nc-topology-css';
 const STORE_KEY = 'nc.topology.groupByFloor';
+const EDGE_KEY = 'nc.topology.edgeStyle';
+const GAP = 104; // 同層節點的水平間距
+const ROW_GAP = 130; // 上下層的垂直間距：留空間給節點名稱與連線標籤
 
 function ensureCss() {
   if (document.head.querySelector(`link[${CSS_ATTR}]`)) return;
@@ -59,16 +62,16 @@ function iconUrl(iconSvg, name) {
   return iconUrls.get(name);
 }
 
-const readPref = () => {
+const readPref = (key) => {
   try {
-    return localStorage.getItem(STORE_KEY) === '1';
+    return localStorage.getItem(key);
   } catch {
-    return false;
+    return null;
   }
 };
-const writePref = (on) => {
+const writePref = (key, value) => {
   try {
-    localStorage.setItem(STORE_KEY, on ? '1' : '0');
+    localStorage.setItem(key, value);
   } catch {
     // 無痕模式等情況存不了就算了
   }
@@ -85,12 +88,13 @@ export async function createTopologyView(host, ctx) {
   ensureCss();
   const [ui, cytoscape] = await Promise.all([ctx.ui.load(), loadCytoscape()]);
   if (destroyed) return { destroy() {} };
-  const { createEmpty, icon, iconSvg } = ui;
+  const { createEmpty, createSegmented, icon, iconSvg } = ui;
 
   // ------------------------------------------------------------ 狀態
   const data = { devices: [], categories: [], floors: [] };
   const status = new Map();
-  let groupByFloor = readPref();
+  let groupByFloor = readPref(STORE_KEY) === '1';
+  let edgeStyle = readPref(EDGE_KEY) === 'orthogonal' ? 'orthogonal' : 'straight';
   let lastSig = '';
   let seq = 0;
 
@@ -101,7 +105,14 @@ export async function createTopologyView(host, ctx) {
   const relayoutBtn = btn('重新排版', 'refresh', () => runLayout());
   const fitBtn = btn('適合畫面', 'search', () => cy?.fit(undefined, 40));
   const pngBtn = btn('匯出 PNG', 'external', () => exportPng());
-  const tools = el('div', { class: 'tp-tools' }, groupBtn, relayoutBtn, fitBtn, pngBtn);
+  const edgeSeg = createSegmented({
+    ariaLabel: '連線樣式',
+    options: [{ value: 'straight', label: '直線' }, { value: 'orthogonal', label: '直角' }],
+    value: edgeStyle,
+    onChange: (v) => setEdgeStyle(v),
+  });
+  const edgeBox = el('div', { class: 'tp-edge', title: '直線：設備之間直接連線。直角：連線只走水平與垂直方向，像組織圖。' }, el('span', { text: '連線' }), edgeSeg.el);
+  const tools = el('div', { class: 'tp-tools' }, groupBtn, edgeBox, relayoutBtn, fitBtn, pngBtn);
   const legend = el(
     'ul',
     { class: 'tp-legend', 'aria-label': '圖例' },
@@ -119,6 +130,7 @@ export async function createTopologyView(host, ctx) {
   const errorBox = el('div', { class: 'tp-error', role: 'alert', hidden: true });
   const root = el('div', { class: 'tp' }, el('header', { class: 'tp-head' }, el('h2', { class: 'tp-title', text: '架構圖' }), tools), warnBox, el('div', { class: 'tp-body' }, stage, emptyBox, errorBox), legend);
   host.replaceChildren(root);
+  edgeSeg.setValue(edgeSeg.value); // 掛上 DOM 後重新量測圓塊
 
   // ------------------------------------------------------------ 資料載入
   async function monitorUsable() {
@@ -214,7 +226,7 @@ export async function createTopologyView(host, ctx) {
       cy = cytoscape({
         container: stage,
         elements: [],
-        style: buildStyle(readColors()),
+        style: buildStyle(readColors(), { edgeStyle }),
         minZoom: 0.15,
         maxZoom: 2.5,
         boxSelectionEnabled: false,
@@ -234,40 +246,28 @@ export async function createTopologyView(host, ctx) {
     runLayout();
   }
 
+  /**
+   * 排版：自己算樹狀位置（treeOrder → tidyX／bandLayout），不使用 breadthfirst。
+   * breadthfirst 的結果會隨目前縮放改變，按「重新排版」後再 fit 會讓圖越排越大、畫面越縮越小。
+   */
   function runLayout() {
     if (!cy) return;
     cy.resize();
-    cy.layout({
-      name: 'breadthfirst',
-      directed: true,
-      roots: cy.nodes('.root'),
-      spacingFactor: 1.35, // 列距：留空間給節點名稱與邊標籤
-      avoidOverlap: true,
-      nodeDimensionsIncludeLabels: true,
-      padding: 40,
-      fit: false,
-      animate: false,
-    }).run();
-    tidy();
-    cy.fit(undefined, 40);
-  }
-
-  /** breadthfirst 之後：每層 x 整理成「父節點置中於子節點上方、同層不重疊」；分群時各樓層佔一條直條 */
-  function tidy() {
     const nodes = cy.nodes().filter((n) => !n.data('isFloor'));
-    const levelOf = levelsByY(nodes.map((n) => n.position('y')));
     const parentOf = new Map();
     cy.edges().forEach((e) => parentOf.set(e.data('target'), e.data('source')));
-    const items = nodes.map((n) => ({ id: n.id(), level: levelOf(n.position('y')), x: n.position('x'), parent: parentOf.get(n.id()) ?? null, group: n.data('parent') ?? null }));
+    const base = nodes.map((n) => ({ id: n.id(), parent: parentOf.get(n.id()) ?? null, group: n.data('parent') ?? null }));
+    const order = treeOrder(base, { gap: GAP });
+    const items = base.map((it) => ({ ...it, ...order.get(it.id) }));
+    let pos;
     if (groupByFloor) {
-      const ys = [...new Set(nodes.map((n) => Math.round(n.position('y'))))].sort((p, q) => p - q);
-      const rowGap = ys.length > 1 ? ys[1] - ys[0] : 100;
-      const pos = bandLayout(items, { gap: 104, rowGap, groupOrder: cy.nodes('.floor').map((n) => n.id()) });
-      cy.batch(() => nodes.forEach((n) => n.position(pos.get(n.id()))));
-      return;
+      pos = bandLayout(items, { gap: GAP, rowGap: ROW_GAP, groupOrder: cy.nodes('.floor').map((n) => n.id()) });
+    } else {
+      const xs = tidyX(items, { gap: GAP });
+      pos = new Map(items.map((it) => [it.id, { x: xs.get(it.id), y: it.level * ROW_GAP }]));
     }
-    const xs = tidyX(items, { gap: 104 });
-    cy.batch(() => nodes.forEach((n) => n.position({ x: xs.get(n.id()), y: n.position('y') })));
+    cy.batch(() => nodes.forEach((n) => n.position(pos.get(n.id()))));
+    cy.fit(undefined, 40);
   }
 
   function applyFaded() {
@@ -296,9 +296,15 @@ export async function createTopologyView(host, ctx) {
 
   function setGroup(on) {
     groupByFloor = on;
-    writePref(on);
+    writePref(STORE_KEY, on ? '1' : '0');
     groupBtn.setAttribute('aria-pressed', String(on));
     render();
+  }
+
+  function setEdgeStyle(v) {
+    edgeStyle = v === 'orthogonal' ? 'orthogonal' : 'straight';
+    writePref(EDGE_KEY, edgeStyle);
+    restyle();
   }
 
   function exportPng() {
@@ -314,7 +320,7 @@ export async function createTopologyView(host, ctx) {
 
   // ------------------------------------------------------------ 主題切換：重讀 CSS 變數並重套樣式
   const restyle = () => {
-    if (cy) cy.style(buildStyle(readColors()));
+    if (cy) cy.style(buildStyle(readColors(), { edgeStyle }));
   };
   const observer = new MutationObserver(restyle);
   observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
@@ -354,6 +360,7 @@ export async function createTopologyView(host, ctx) {
       for (const off of offs.splice(0)) off();
       for (const fn of cleanups.splice(0)) fn();
       destroyCy();
+      edgeSeg.destroy?.();
       host.replaceChildren();
     },
   };

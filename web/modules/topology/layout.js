@@ -99,3 +99,44 @@ export function levelsByY(ys, tolerance = 1) {
   const sorted = [...new Set(ys.map((y) => Math.round(y / tolerance)))].sort((a, b) => a - b);
   return (y) => sorted.indexOf(Math.round(y / tolerance));
 }
+
+/**
+ * 樹狀排版的起點（取代 breadthfirst，不受目前縮放與上一次排版影響，按幾次「重新排版」結果都一樣）：
+ * 由根節點依深度優先走訪，決定每台設備在第幾層（level）與起始橫向位置：
+ * 葉節點依序各佔一格（gap），有下游的設備置中於下游上方，之後再交給 tidyX／bandLayout 消除重疊。
+ * 上游不存在、或形成迴圈的設備視為根節點。
+ * @param {{id: string, parent?: string|null}[]} items 依想要的左右順序排好
+ * @returns {Map<string, {level: number, x: number}>}
+ */
+export function treeOrder(items, { gap = 100 } = {}) {
+  const byId = new Map(items.map((i) => [i.id, i]));
+  const children = new Map();
+  const roots = [];
+  const reaches = (start) => {
+    // 往上走，若回到自己表示迴圈
+    const seen = new Set();
+    for (let p = byId.get(start)?.parent; p && byId.has(p); p = byId.get(p).parent) {
+      if (p === start || seen.has(p)) return false;
+      seen.add(p);
+    }
+    return true;
+  };
+  for (const it of items) {
+    if (it.parent && it.parent !== it.id && byId.has(it.parent) && reaches(it.id)) children.set(it.parent, [...(children.get(it.parent) ?? []), it.id]);
+    else roots.push(it.id);
+  }
+  const out = new Map();
+  let slot = 0;
+  const visit = (id, level) => {
+    if (out.has(id)) return;
+    const node = { level, x: 0 };
+    out.set(id, node);
+    const kids = (children.get(id) ?? []).filter((c) => !out.has(c));
+    for (const c of kids) visit(c, level + 1);
+    node.x = kids.length ? kids.reduce((sum, c) => sum + out.get(c).x, 0) / kids.length : slot++ * gap;
+  };
+  for (const r of roots) visit(r, 0);
+  // 迴圈裡的設備（理論上 graph.js 已處理）：放在最上層
+  for (const it of items) visit(it.id, 0);
+  return out;
+}

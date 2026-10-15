@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { spread, tidyX, bandLayout, levelsByY } from '../../../web/modules/topology/layout.js';
+import { spread, tidyX, bandLayout, levelsByY, treeOrder } from '../../../web/modules/topology/layout.js';
 
 const GAP = 100;
 const it = (id, level, x, parent = null, group = null) => ({ id, level, x, parent, group });
@@ -85,5 +85,28 @@ describe('levelsByY', () => {
   test('相同 y 為同一層，由上而下編號', () => {
     const lv = levelsByY([200, 0, 100, 100]);
     assert.deepEqual([0, 100, 200].map(lv), [0, 1, 2]);
+  });
+});
+
+describe('treeOrder', () => {
+  test('層級依上游關係；葉節點各佔一格，父節點置中於下游上方', () => {
+    const o = treeOrder([{ id: 'r' }, { id: 'a', parent: 'r' }, { id: 'b', parent: 'r' }, { id: 'a1', parent: 'a' }, { id: 'a2', parent: 'a' }], { gap: GAP });
+    assert.deepEqual([...o].map(([id, v]) => [id, v.level]), [['r', 0], ['a', 1], ['a1', 2], ['a2', 2], ['b', 1]]);
+    assert.equal(o.get('a1').x, 0);
+    assert.equal(o.get('a2').x, GAP);
+    assert.equal(o.get('b').x, 2 * GAP);
+    assert.equal(o.get('a').x, GAP / 2);
+    assert.equal(o.get('r').x, (GAP / 2 + 2 * GAP) / 2);
+  });
+
+  test('上游不存在、指向自己、形成迴圈 → 視為根節點；每台設備都有位置', () => {
+    const o = treeOrder([{ id: 'x', parent: 'ghost' }, { id: 's', parent: 's' }, { id: 'p', parent: 'q' }, { id: 'q', parent: 'p' }], { gap: GAP });
+    assert.equal(o.size, 4);
+    for (const v of o.values()) assert.equal(v.level, 0);
+  });
+
+  test('同樣輸入永遠得到同樣結果（重新排版不會越排越大）', () => {
+    const items = [{ id: 'r' }, { id: 'a', parent: 'r' }, { id: 'b', parent: 'a' }];
+    assert.deepEqual([...treeOrder(items)], [...treeOrder(items)]);
   });
 });

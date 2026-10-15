@@ -26,8 +26,12 @@ export function readColors(root = document.documentElement) {
 
 const FONT = 'system-ui, "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", sans-serif';
 
-/** @param {ReturnType<typeof readColors>} c */
-export function buildStyle(c) {
+/**
+ * @param {ReturnType<typeof readColors>} c
+ * @param {{edgeStyle?: 'straight'|'orthogonal'}} [opts] straight＝直線連線；orthogonal＝直角連線（只走水平、垂直）
+ */
+export function buildStyle(c, { edgeStyle = 'straight' } = {}) {
+  const orthogonal = edgeStyle === 'orthogonal';
   const status = (cls, color) => ({ selector: `node.${cls}`, style: { 'background-color': color } });
   return [
     {
@@ -127,5 +131,9 @@ export function buildStyle(c) {
     { selector: 'edge.m-poe', style: { 'line-color': c.warn, color: c.warn } },
     { selector: 'edge.m-other', style: { 'line-color': c.disabled } },
     { selector: 'edge.faded', style: { opacity: 0.12 } },
+    // 直角連線：從上游往下走到兩層中間再橫移、最後垂直進入下游；標籤保持水平
+    ...(orthogonal
+      ? [{ selector: 'edge', style: { 'curve-style': 'taxi', 'taxi-direction': 'downward', 'taxi-turn': '50%', 'taxi-radius': 6, 'target-text-rotation': 'none', 'target-text-offset': 30 } }]
+      : []),
   ];
 }
