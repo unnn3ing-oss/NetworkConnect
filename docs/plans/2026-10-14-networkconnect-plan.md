@@ -52,6 +52,8 @@ Phase 0（地基，2 個 agent 並行）     Phase 1（功能，6 個 agent 並�
 - [ ] `release.yml` 手動觸發可產出 `.dmg`（arm64）與 `.exe`，並通過 Electron 冒煙測試（App 啟動 → 視窗載入 → `/api/system/health` 正常 → 結束後無殘留 go2rtc 行程）
 - [ ] `npm run dev:mock` 下五個分頁都能操作；停用任一模組其他仍正常
 
+> ✅ **G1 已通過（2026-10-15）**：B1–B5、D1 全部合併於 `aaa83f5`，`npm test` 946/946；CI run 38671879673 三平台測試＋mac-arm64／win-x64 打包與 Electron 冒煙測試全綠（`release.yml` 與 CI 共用 `package.yml`，正式發版時再手動觸發以免產生多餘的 Release 草稿）。主控以 Chromium 實測五個分頁，並逐一停用 inventory／io／monitor／floorplan／nvr：只有依賴該模組的分頁顯示錯誤卡，其他分頁正常、無 pageerror。
+
 ### G2：整合完成
 
 - [ ] E2E 全綠（Playwright，Chromium 路徑 `/opt/pw-browsers`）
