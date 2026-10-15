@@ -175,6 +175,42 @@ describe('cameras 頁（Chromium）', async () => {
     assert.equal(await t.page.locator('.cam-full').count(), 0);
   });
 
+  test('畫質切換：畫面牆改用主碼流（記住設定）；全螢幕可在主／子碼流之間切換', { skip }, async () => {
+    const t = await boot();
+    await t.waitConns(4);
+    await t.page.click('.cam-quality .nc-seg-btn[data-value="main"]');
+    await waitFor(() => t.fake.wsLog.slice(-4).every((x) => x.src.endsWith('_main')) && t.fake.connectionCount() === 4, { message: '畫面牆沒有改連主碼流' });
+    assert.deepEqual((await t.page.locator('.cam-tile[data-key]').evaluateAll((els) => els.map((e) => e.dataset.stream))).sort(),
+      [1, 2, 3, 4].map((n) => `nvr_nvr_main_${n}_main`));
+
+    // 重新整理後仍是主碼流
+    await t.page.reload();
+    await t.waitConns(4);
+    assert.ok(t.fake.wsLog.slice(-4).every((x) => x.src.endsWith('_main')));
+    assert.equal(await t.page.locator('.cam-quality .nc-seg-btn[data-value="main"]').getAttribute('aria-checked'), 'true');
+
+    // 全螢幕預設主碼流 → 切成子碼流 → 再切回主碼流；始終只有一路
+    await t.page.dblclick('.cam-tile[data-key="nvr_main:2"]');
+    await t.page.waitForSelector('.cam-full');
+    await t.waitConns(1);
+    assert.equal(await t.page.locator('.cam-full').getAttribute('data-stream'), 'nvr_nvr_main_2_main');
+    assert.match(await t.page.locator('.cam-full-bar').innerText(), /主碼流/);
+    await t.page.click('.cam-full [data-action="toggle-quality"]');
+    await waitFor(() => t.fake.wsLog.at(-1).src === 'nvr_nvr_main_2_sub' && t.fake.connectionCount() === 1, { message: '全螢幕沒有切到子碼流' });
+    assert.equal(await t.page.locator('.cam-full').getAttribute('data-stream'), 'nvr_nvr_main_2_sub');
+    assert.match(await t.page.locator('[data-action="toggle-quality"]').innerText(), /切換為主碼流/);
+    await t.page.click('.cam-full [data-action="toggle-quality"]');
+    await waitFor(() => t.fake.wsLog.at(-1).src === 'nvr_nvr_main_2_main' && t.fake.connectionCount() === 1, { message: '全螢幕沒有切回主碼流' });
+
+    // 關閉全螢幕：畫面牆回到使用者選的主碼流；切回子碼流也生效
+    await t.page.keyboard.press('Escape');
+    await t.waitConns(4);
+    assert.ok(t.fake.wsLog.slice(-4).every((x) => x.src.endsWith('_main')));
+    await t.page.click('.cam-quality .nc-seg-btn[data-value="sub"]');
+    await waitFor(() => t.fake.wsLog.slice(-4).every((x) => x.src.endsWith('_sub')) && t.fake.connectionCount() === 4, { message: '畫面牆沒有切回子碼流' });
+    assert.deepEqual(t.problems, []);
+  });
+
   test('#/cameras?device=<deviceId> 直接開單一畫面', { skip }, async () => {
     const t = await boot({ hash: '#/cameras?device=dev_cam3' });
     await t.page.waitForSelector('.cam-tile[data-key]');

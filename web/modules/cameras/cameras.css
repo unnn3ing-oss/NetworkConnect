@@ -6,7 +6,7 @@
 .cam-grow { flex: 1 1 auto; }
 .cam-muted { color: var(--muted); font-size: 13px; }
 .cam-error { color: var(--danger); }
-.cam-limit { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+.cam-limit, .cam-quality { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
 .cam-limit-input { width: 72px; padding-block: 6px; text-align: center; }
 
 /* ---- 提示列 ---- */

@@ -3,7 +3,7 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFixture } from '../../../contracts/index.js';
 import {
-  applyBrand, applyLimit, clampLimit, clampSplit, connectionPayload, connectionSignature, describeTest, ensureChannels, flattenChannels,
+  applyBrand, applyLimit, clampLimit, clampQuality, clampSplit, connectionPayload, connectionSignature, describeTest, ensureChannels, flattenChannels,
   gridCols, newWizardState, pageCount, pageSlice, parseTarget, previewUrl, selectedKeys, stateFromNvr, streamName, validateChannels,
   validateConnection, wsPath,
 } from '../../../web/modules/cameras/logic.js';
@@ -203,4 +203,9 @@ describe('精靈表單', () => {
     assert.equal(describeTest({ ok: false, error: '帳號或密碼錯誤' }).kind, 'error');
     assert.equal(describeTest({ ok: false, error: '帳號或密碼錯誤' }).text, '帳號或密碼錯誤');
   });
+});
+
+test('clampQuality：只有 main 是主碼流，其他（含舊設定、亂填）一律子碼流', () => {
+  assert.equal(clampQuality('main'), 'main');
+  for (const v of ['sub', '', null, undefined, 'MAIN', 'hd']) assert.equal(clampQuality(v), 'sub');
 });

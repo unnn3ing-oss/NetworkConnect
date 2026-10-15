@@ -18,6 +18,10 @@ export const gridCols = (split) => Math.round(Math.sqrt(SPLITS.includes(split) ?
 
 export const clampSplit = (n) => (SPLITS.includes(Number(n)) ? Number(n) : DEFAULT_SPLIT);
 
+/** 畫面牆畫質：子碼流（預設，省頻寬）或主碼流；其他值一律當子碼流 */
+export const clampQuality = (q) => (q === 'main' ? 'main' : 'sub');
+export const QUALITY_LABELS = Object.freeze({ sub: '子碼流', main: '主碼流' });
+
 export function clampLimit(n) {
   const v = Math.trunc(Number(n));
   if (!Number.isFinite(v)) return DEFAULT_LIMIT;

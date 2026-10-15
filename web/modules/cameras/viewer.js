@@ -1,17 +1,17 @@
-// 監視器頁：分割 1／4／9／16、頻道勾選、子碼流連線、雙擊切主碼流全螢幕、同時串流上限、分頁隱藏時關閉全部串流。
+// 監視器頁：分割 1／4／9／16、頻道勾選、畫面牆畫質（子碼流／主碼流）、雙擊全螢幕（預設主碼流，可切換）、同時串流上限、分頁隱藏時關閉全部串流。
 //
 // 串流一律由 syncStreams() 依「目前應該開啟哪些」統一對帳：
 //   - 分頁隱藏（visibilitychange）→ 全部關閉；回來再開
-//   - 開啟全螢幕主碼流 → 格子全部暫停，只留主碼流一路；關閉後格子切回子碼流
+//   - 開啟全螢幕 → 格子全部暫停，只留全螢幕一路；關閉後格子恢復（畫面牆畫質不變）
 //   - 超過同時串流上限的格子不連線，顯示「已達上限」
 //   - destroy()（模組 unmount）→ 全部關閉
 import { h, store } from './dom.js';
 import { createPlayer, connectPlayer } from './player.js';
 import {
-  SPLITS, applyLimit, clampLimit, clampSplit, flattenChannels, gridCols, pageSlice, parseTarget, selectedKeys, streamName, wsPath,
+  QUALITY_LABELS, SPLITS, applyLimit, clampLimit, clampQuality, clampSplit, flattenChannels, gridCols, pageSlice, parseTarget, selectedKeys, streamName, wsPath,
 } from './logic.js';
 
-const KEYS = { split: 'nc.cameras.split', limit: 'nc.cameras.limit', hidden: 'nc.cameras.hidden' };
+const KEYS = { split: 'nc.cameras.split', limit: 'nc.cameras.limit', hidden: 'nc.cameras.hidden', quality: 'nc.cameras.quality' };
 const STATUS_POLL_MS = 5000;
 
 const STATE_TEXT = {
@@ -36,6 +36,7 @@ export function createViewer(el, ctx, { onAddNvr, onManage, uiLib }) {
     hidden: store.get(KEYS.hidden, []),
     split: clampSplit(store.get(KEYS.split, 4)),
     limit: clampLimit(store.get(KEYS.limit, 9)),
+    quality: clampQuality(store.get(KEYS.quality, 'sub')), // 畫面牆用哪個碼流
     page: 0,
     target: { mode: 'all' },
     full: null, // 全螢幕中的頻道 key
@@ -73,11 +74,24 @@ export function createViewer(el, ctx, { onAddNvr, onManage, uiLib }) {
       renderGrid();
     },
   });
+  const qualitySeg = createSegmented({
+    options: ['sub', 'main'].map((q) => ({ value: q, label: QUALITY_LABELS[q] })),
+    value: st.quality,
+    ariaLabel: '畫面牆畫質',
+    role: 'radiogroup',
+    onChange: (v) => {
+      st.quality = clampQuality(v);
+      store.set(KEYS.quality, st.quality);
+      renderGrid();
+    },
+  });
   const sideToggle = h('button', { type: 'button', class: 'btn small cam-side-toggle', 'aria-expanded': 'true', onclick: () => toggleSide() }, '頻道');
   const head = h('header', { class: 'cam-head' },
     h('h2', { class: 'cam-title' }, '監視器'),
     segmented.el,
     h('label', { class: 'cam-limit', title: '同時間最多開幾路串流，超過的格子不連線（預設 9）' }, h('span', {}, '串流上限'), limitInput),
+    h('div', { class: 'cam-quality', title: '子碼流：畫質較低但流暢、省頻寬（建議）。主碼流：最清晰，但同時開很多路會吃網路頻寬與電腦效能' },
+      h('span', {}, '畫質'), qualitySeg.el),
     h('span', { class: 'cam-grow' }),
     sideToggle,
     h('button', { type: 'button', class: 'btn small', 'data-action': 'manage', onclick: () => onManage() }, 'NVR 管理'),
@@ -92,6 +106,7 @@ export function createViewer(el, ctx, { onAddNvr, onManage, uiLib }) {
   const root = h('div', { class: 'cam' }, head, notices, body);
   el.replaceChildren(root);
   segmented.setValue(segmented.value); // 掛上 DOM 後重新量測圓塊
+  qualitySeg.setValue(qualitySeg.value);
 
   const narrow = () => window.matchMedia?.('(max-width: 860px)').matches;
   function toggleSide(open) {
@@ -243,7 +258,7 @@ export function createViewer(el, ctx, { onAddNvr, onManage, uiLib }) {
 
   // ------------------------------------------------------------ 格子
   function makeTile(channel, { limited }) {
-    const name = streamName(channel.nvrId, channel.ch, 'sub');
+    const name = streamName(channel.nvrId, channel.ch, st.quality);
     const msg = h('span', { class: 'cam-tile-msg' });
     const retry = h('button', { type: 'button', class: 'btn small cam-retry', hidden: true, onclick: (e) => { e.stopPropagation(); tile.retry(); } }, '重試');
     const overlay = h('div', { class: 'cam-tile-overlay' }, msg, retry);
@@ -382,18 +397,21 @@ export function createViewer(el, ctx, { onAddNvr, onManage, uiLib }) {
     if (!channel || st.full || st.destroyed) return;
     st.full = key;
     const opener = document.activeElement;
-    const name = streamName(channel.nvrId, channel.ch, 'main');
+    let kind = 'main';
+    const nameOf = () => streamName(channel.nvrId, channel.ch, kind);
     const msg = h('span', { class: 'cam-tile-msg' });
     const retry = h('button', { type: 'button', class: 'btn small cam-retry', hidden: true, onclick: () => view.player?.retry() }, '重試');
     const overlay = h('div', { class: 'cam-tile-overlay' }, msg, retry);
     const videoBox = h('div', { class: 'cam-video cam-full-video' });
     const closeBtn = h('button', { type: 'button', class: 'btn', 'data-action': 'close-full', onclick: () => closeFull() }, icon('close', { size: 16 }), ' 關閉');
+    const subtitle = h('small', { class: 'cam-muted' });
+    const kindBtn = h('button', { type: 'button', class: 'btn', 'data-action': 'toggle-quality', onclick: () => view.setKind(kind === 'main' ? 'sub' : 'main') });
     const node = h('div', {
-      class: 'cam-full', role: 'dialog', 'aria-modal': 'true', 'aria-label': `${channel.name} 主碼流`, 'data-stream': name, 'data-state': 'idle', tabindex: '-1',
+      class: 'cam-full', role: 'dialog', 'aria-modal': 'true', 'aria-label': `${channel.name} 全螢幕`, 'data-state': 'idle', tabindex: '-1',
       ondblclick: () => closeFull(),
       onkeydown: (e) => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closeFull(); } },
     },
-    h('div', { class: 'cam-full-bar' }, h('strong', { class: 'cam-full-title' }, channel.name), h('small', { class: 'cam-muted' }, `${channel.nvrName} · CH${channel.ch} · 主碼流`), h('span', { class: 'cam-grow' }), closeBtn),
+    h('div', { class: 'cam-full-bar' }, h('strong', { class: 'cam-full-title' }, channel.name), subtitle, h('span', { class: 'cam-grow' }), kindBtn, closeBtn),
     videoBox, overlay);
 
     const view = {
@@ -411,14 +429,25 @@ export function createViewer(el, ctx, { onAddNvr, onManage, uiLib }) {
         const player = createPlayer((s, d) => view.setState(s, d));
         view.player = player;
         videoBox.append(player);
-        connectPlayer(player, wsPath(name));
+        connectPlayer(player, wsPath(nameOf()));
       },
       stop() {
         view.player?.stop();
         view.player = null;
         view.setState('paused');
       },
+      /** 切換主／子碼流：更新標示後重新連線（分頁隱藏中就等回來再連） */
+      setKind(next) {
+        kind = next;
+        node.dataset.stream = nameOf();
+        subtitle.textContent = `${channel.nvrName} · CH${channel.ch} · ${QUALITY_LABELS[kind]}`;
+        kindBtn.textContent = `切換為${QUALITY_LABELS[kind === 'main' ? 'sub' : 'main']}`;
+        if (!view.player) return;
+        view.stop();
+        if (!st.tabHidden) view.start();
+      },
     };
+    view.setKind(kind);
     st.fullView = view;
     document.body.append(node);
     document.documentElement.classList.add('cam-full-open');
