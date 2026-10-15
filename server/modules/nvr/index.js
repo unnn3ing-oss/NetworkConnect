@@ -7,10 +7,12 @@
 //   go2rtc-client.js    go2rtc REST／WebSocket 用戶端（upsertStream、removeStream、probe）
 //   nvrs.js             CRUD、密碼、串流註冊、測試連線、白名單
 //   ws-proxy.js         /api/nvr/ws 反向代理
+//   rtsp-fix-proxy.js   RTSP 相容代理（修正把影像軌標成 sendonly 的 NVR；只用於自訂品牌＋受管 go2rtc）
 import path from 'node:path';
 import { createGo2rtcClient } from './go2rtc-client.js';
 import { apiListenFromUrl, createGo2rtcProcess } from './go2rtc-process.js';
 import { createNvrService } from './nvrs.js';
+import { createRtspFixProxy } from './rtsp-fix-proxy.js';
 import { registerWsProxy } from './ws-proxy.js';
 
 export const NOTE_DOWN = '串流服務未啟動';
@@ -26,9 +28,11 @@ function getState(ctx) {
   let st = states.get(ctx);
   if (st) return st;
   const client = createGo2rtcClient({ baseUrl: ctx.config.go2rtcUrl });
-  const service = createNvrService({ ctx, client });
   const managed = Boolean(ctx.config.go2rtcPath);
-  st = { ctx, client, service, managed, proc: null, wsProxy: null, timer: null, offs: [], running: null, started: false };
+  // RTSP 相容代理只在受管模式（go2rtc 與本伺服器在同一台電腦）使用：go2rtc 要連得到 127.0.0.1 的代理埠
+  const rtspFix = managed ? createRtspFixProxy({ log: ctx.log }) : null;
+  const service = createNvrService({ ctx, client, rtspFix });
+  st = { ctx, client, service, managed, rtspFix, proc: null, wsProxy: null, timer: null, offs: [], running: null, started: false };
   if (managed) {
     st.proc = createGo2rtcProcess({
       binPath: ctx.config.go2rtcPath,
@@ -166,6 +170,7 @@ export default {
       for (const off of st.offs) off();
       st.wsProxy?.closeAll();
       await st.proc?.stop(); // 必須確實結束 go2rtc（Windows 不會隨父行程結束）
+      await st.rtspFix?.close();
     }
   },
 };

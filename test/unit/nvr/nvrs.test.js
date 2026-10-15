@@ -22,6 +22,13 @@ describe('describeProbeFailure', () => {
     assert.match(msg, /無法取得影像/);
     assert.doesNotMatch(msg, /pw@/);
   });
+
+  test('NVR 有回應但沒有可播放的軌（codecs not matched 箭頭左邊空白）→ 白話說明', () => {
+    const msg = describeProbeFailure({ reason: 'error', error: 'mse: streams: codecs not matched:  => video:H264, video:H265, audio:PCMA' }, nvr);
+    assert.match(msg, /沒有提供可播放的影像/);
+    const other = describeProbeFailure({ reason: 'error', error: 'mse: streams: codecs not matched: video:MJPEG => video:H264' }, nvr);
+    assert.match(other, /video:MJPEG/);
+  });
 });
 
 describe('normalizeChannels', () => {
@@ -37,15 +44,15 @@ describe('normalizeChannels', () => {
 });
 
 describe('test()（注入假 client）', () => {
-  function make(client) {
-    const record = { id: 'nvr_t', brand: 'hikvision', host: '10.0.0.5', port: 554, username: 'a', streamMain: '1', streamSub: '2', urlTemplate: null, channels: [{ ch: 1, name: '', deviceId: null, enabled: true }] };
+  function make(client, { brand = 'hikvision', urlTemplate = null, rtspFix = null } = {}) {
+    const record = { id: 'nvr_t', brand, urlTemplate, host: '10.0.0.5', port: 554, username: 'a', streamMain: '1', streamSub: '2', channels: [{ ch: 1, name: '', deviceId: null, enabled: true }] };
     const ctx = {
       config: { go2rtcPath: null },
       secrets: { get: () => 'pw', has: () => true },
       events: { emit() {} },
       store: { collection: () => ({ get: async (id) => (id === 'nvr_t' ? record : undefined), list: async () => [record] }) },
     };
-    return createNvrService({ ctx, client });
+    return createNvrService({ ctx, client, rtspFix });
   }
 
   test('probe 逾時 → ok:false 並說明逾時', async () => {
@@ -70,5 +77,20 @@ describe('test()（注入假 client）', () => {
       ['upsert', 'nvr_nvr_t_1_sub', 'rtsp://a:pw@10.0.0.5:554/Streaming/Channels/102'],
       ['probe', 'nvr_nvr_t_1_sub'],
     ]);
+  });
+
+  test('自訂品牌經由 RTSP 相容代理（帳密與路徑保留、換成本機代理埠）；內建品牌直連', async () => {
+    const targets = [];
+    const rtspFix = { portFor: async (t) => (targets.push(t), 40123) };
+    const calls = [];
+    const client = { upsertStream: async (n, s) => calls.push(s), probe: async () => ({ ok: true, codec: 'h265' }) };
+    const custom = make(client, { brand: 'custom', urlTemplate: 'rtsp://{u}:{p}@{host}:{port}/chID={ch}&streamType={s}&linkType=tcp', rtspFix });
+    await custom.test('nvr_t', 1);
+    assert.deepEqual(calls.at(-1), 'rtsp://a:pw@127.0.0.1:40123/chID=1&streamType=2&linkType=tcp#backchannel=0');
+    assert.deepEqual(targets, [{ host: '10.0.0.5', port: 554 }]);
+    await make(client, { rtspFix }).test('nvr_t', 1);
+    assert.equal(calls.at(-1), 'rtsp://a:pw@10.0.0.5:554/Streaming/Channels/102');
+    await make(client, { brand: 'custom', urlTemplate: 'rtsps://{host}/x', rtspFix }).test('nvr_t', 1);
+    assert.equal(calls.at(-1), 'rtsps://10.0.0.5/x', 'rtsps 加密連線無法修改，直連');
   });
 });

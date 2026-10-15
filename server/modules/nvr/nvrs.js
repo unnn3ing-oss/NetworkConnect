@@ -2,6 +2,7 @@
 // 路由層（index.js）只負責驗證請求格式與轉成 HTTP。
 import { nanoid } from 'nanoid';
 import { notFound, validation } from '../../core/errors.js';
+import { routeThroughProxy } from './rtsp-fix-proxy.js';
 import {
   buildStreamUrl, getTemplate, isRtspTemplate, isValidHost, loadTemplates, parseStreamName, redactUrls, streamName,
 } from './templates.js';
@@ -24,6 +25,10 @@ export function describeProbeFailure(result, nvr) {
     case 'timeout':
       return '逾時：8 秒內沒有收到影像。請確認 RTSP 埠、頻道編號與碼流設定是否正確。';
     default:
+      // go2rtc 的「codecs not matched: <NVR 提供的> => <可播放的>」：箭頭左邊空白＝NVR 有回應但沒有提供影像軌
+      if (/codecs not matched:\s*=>/.test(result.error ?? '')) {
+        return 'NVR 有回應，但沒有提供可播放的影像。請確認這個頻道有接攝影機，並檢查主碼流／子碼流代號與網址格式是否正確。';
+      }
       return `無法取得影像：${redactUrls(result.error || '未知原因')}`;
   }
 }
@@ -42,8 +47,10 @@ export function normalizeChannels(existing, count) {
  * @param {object} deps
  * @param {object} deps.ctx          模組 ctx（store、secrets、events、validate、config、log）
  * @param {ReturnType<import('./go2rtc-client.js').createGo2rtcClient>} deps.client
+ * @param {ReturnType<import('./rtsp-fix-proxy.js').createRtspFixProxy>|null} [deps.rtspFix]
+ *   RTSP 相容代理（只在 go2rtc 跑在本機時提供）；自訂品牌的串流經由它修正 NVR 的 SDP
  */
-export function createNvrService({ ctx, client }) {
+export function createNvrService({ ctx, client, rtspFix = null }) {
   const log = ctx.log ?? { info() {}, warn() {}, error() {}, debug() {} };
   const nvrs = () => ctx.store.collection('nvrs');
   const devices = () => ctx.store.collection('devices');
@@ -60,13 +67,21 @@ export function createNvrService({ ctx, client }) {
   const view = (nvr) => ({ ...nvr, hasPassword: ctx.secrets.has(nowSecretKey(nvr.id)) });
 
   // ---------------------------------------------------------------- 串流註冊
-  function desiredStreams(nvr) {
+  /** 交給 go2rtc 的來源網址：自訂品牌（未驗證過的 NVR）改走 RTSP 相容代理，內建品牌直連 */
+  async function streamSrc(nvr, password, ch, kind) {
+    const url = buildStreamUrl(nvr, password, ch, kind);
+    if (!rtspFix || nvr.brand !== 'custom') return url;
+    const route = routeThroughProxy(url);
+    return route ? route.build(await rtspFix.portFor(route.target)) : url;
+  }
+
+  async function desiredStreams(nvr) {
     const password = ctx.secrets.get(nowSecretKey(nvr.id)) ?? '';
     const out = [];
     for (const c of nvr.channels) {
       for (const kind of ['main', 'sub']) {
         try {
-          out.push({ name: streamName(nvr.id, c.ch, kind), src: buildStreamUrl(nvr, password, c.ch, kind) });
+          out.push({ name: streamName(nvr.id, c.ch, kind), src: await streamSrc(nvr, password, c.ch, kind) });
         } catch (err) {
           log.warn(`NVR ${nvr.id} 頻道 ${c.ch} 的 ${kind} URL 無法產生：${err.message}`);
         }
@@ -77,7 +92,7 @@ export function createNvrService({ ctx, client }) {
 
   /** 註冊某個 NVR 的全部串流；previous 是異動前的紀錄，用來移除不再存在的頻道 */
   async function syncNvr(nvr, previous = null) {
-    const wanted = desiredStreams(nvr);
+    const wanted = await desiredStreams(nvr);
     const names = new Set(wanted.map((s) => s.name));
     try {
       if (previous) {
@@ -111,7 +126,7 @@ export function createNvrService({ ctx, client }) {
     return serial(async () => {
       const all = await nvrs().list();
       const wanted = new Map();
-      for (const nvr of all) for (const s of desiredStreams(nvr)) wanted.set(s.name, s.src);
+      for (const nvr of all) for (const s of await desiredStreams(nvr)) wanted.set(s.name, s.src);
       try {
         const existing = await client.listStreams();
         for (const name of Object.keys(existing)) {
@@ -132,7 +147,7 @@ export function createNvrService({ ctx, client }) {
   /** go2rtc 目前是否缺少應註冊的串流（go2rtc 被外部重啟、串流被清掉時為 true） */
   async function hasMissingStreams() {
     const wanted = [];
-    for (const nvr of await nvrs().list()) for (const s of desiredStreams(nvr)) wanted.push(s.name);
+    for (const nvr of await nvrs().list()) for (const s of await desiredStreams(nvr)) wanted.push(s.name);
     if (!wanted.length) return false;
     const existing = await client.listStreams();
     return wanted.some((name) => !(name in existing));
@@ -282,7 +297,7 @@ export function createNvrService({ ctx, client }) {
       if (!nvr) throw notFound('找不到 NVR');
       if (!nvr.channels.some((c) => c.ch === channel)) throw validation(`頻道 ${channel} 不存在`);
       const name = streamName(id, channel, 'sub');
-      const src = buildStreamUrl(nvr, ctx.secrets.get(nowSecretKey(id)) ?? '', channel, 'sub');
+      const src = await streamSrc(nvr, ctx.secrets.get(nowSecretKey(id)) ?? '', channel, 'sub');
       await serial(() => client.upsertStream(name, src)); // go2rtc 本身不可用 → UPSTREAM
       const r = await client.probe(name); // 同上
       if (!r.ok) return { ok: false, error: describeProbeFailure(r, nvr) };
