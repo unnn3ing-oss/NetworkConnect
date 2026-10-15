@@ -1,0 +1,36 @@
+/* 設定頁：只用 web/ui 的 token，不使用行內樣式（CSP style-src 'self'）。 */
+.st { display: grid; gap: 16px; max-width: 820px; }
+.st-h2 { margin: 0; font-size: 24px; }
+.st-title { margin: 0 0 6px; font-size: 17px; display: flex; align-items: center; gap: 8px; }
+.st-muted { margin: 0 0 12px; color: var(--muted); }
+.st-warn { margin: 12px 0 0; padding: 10px 14px; border-radius: var(--radius-s); background: var(--warn-soft); color: var(--warn-fg); }
+.st-warn[hidden] { display: none; }
+
+.st-badge { padding: 2px 10px; border-radius: var(--radius-pill); font-size: 12px; font-weight: 600; background: var(--track); color: var(--muted); }
+.st-badge.on, .st-badge.ok { background: var(--accent-soft); color: var(--ok); }
+.st-badge.failed { background: var(--danger-soft); color: var(--danger); }
+.st-title .st-badge { margin-left: auto; }
+
+.st-form { display: grid; gap: 12px; margin-top: 8px; }
+.st-form .nc-field { margin: 0; }
+.st-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+.st-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+.st-actions .btn { display: inline-flex; align-items: center; text-decoration: none; }
+.st-check { display: flex; align-items: flex-start; gap: 10px; margin: 14px 0 4px; }
+.st-check input { margin-top: 3px; }
+
+.st-modules { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.st-module { display: flex; align-items: center; gap: 12px; padding: 10px 4px; border-bottom: 1px solid var(--border); }
+.st-module:last-child { border-bottom: 0; }
+.st-module input[type="checkbox"], .st-lock { flex: none; width: 18px; height: 18px; }
+.st-module-main { flex: 1 1 auto; min-width: 0; display: grid; }
+.st-module-name { font-weight: 700; }
+.st-module-desc { color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
+
+.st-kv { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 16px; margin: 8px 0 0; }
+.st-kv dt { color: var(--muted); }
+.st-kv dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+
+@media (max-width: 820px) {
+  .st-actions .btn { flex: 1 1 140px; justify-content: center; }
+}
