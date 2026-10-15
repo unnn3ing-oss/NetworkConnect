@@ -75,7 +75,15 @@ npm run dist:win    # 只能在 Windows 上執行 → dist/*.exe（NSIS，x64，
 |---|---|---|
 | `.github/workflows/ci.yml` | 任何分支 push、PR | job `test`（ubuntu／macos-latest／windows-latest：`npm ci && npm test`）→ job `package`（呼叫 `package.yml`） |
 | `.github/workflows/package.yml` | 只被呼叫 | job `package (mac-arm64)`、`package (win-x64)`：下載 go2rtc → 打包 → 檢查 go2rtc 已隨附（Mac 另驗簽章與 Info.plist）→ Electron 冒煙測試 → 上傳 workflow artifacts（不建立 Release） |
-| `.github/workflows/release.yml` | 只有 `v*` tag | 驗證 tag＝`package.json` 版本 → 測試 → 打包 → 建立 Release **草稿**（不自動發布） |
+| `.github/workflows/release.yml` | 只有手動觸發（`workflow_dispatch`） | 測試 → 打包（版本號＝`package.json` 的 major.minor ＋ 本 workflow 執行次數）→ 建立並**發布** Release，更新內容為上一版之後的 commit 標題 |
+
+## App 內更新
+
+- 選單列／系統匣「檢查更新…」與背景檢查（啟動 30 秒後、之後每 12 小時）都查 GitHub Releases 的最新版。
+- 下載這台電腦對應的安裝檔（`-mac-arm64.dmg`／`-win-x64.exe`），大小與 GitHub 提供的 sha256（asset `digest`）都相符才安裝。
+- Windows：App 完全結束後以 NSIS 靜默安裝（`--updated /S --force-run`）並自動開啟。
+- Mac：App 結束後由 `userData/updates/install.sh` 掛載 dmg、取代 `/Applications` 裡的舊版再開啟，失敗會還原舊版；紀錄在 `logs/update.log`。從 dmg 或 App Translocation 位置執行時無法自動安裝，會請使用者先移到「應用程式」。
+- Mac 是 ad-hoc 簽章：每次更新後 macOS 可能再次詢問「區域網路」權限。
 
 ## 安裝教學頁
 

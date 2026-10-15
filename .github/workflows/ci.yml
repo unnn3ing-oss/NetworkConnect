@@ -1,7 +1,7 @@
 name: CI
 
 # 任何分支 push 與 PR 都會執行：三平台跑單元／契約測試，並打包 Mac（Apple 晶片）與 Windows 安裝檔做 Electron 冒煙測試。
-# 這裡只上傳 workflow artifacts，不建立 Release（Release 見 release.yml）。
+# 這裡只上傳 workflow artifacts，不建立 Release（發布新版見 release.yml，只在手動觸發時執行）。
 on:
   push:
   pull_request:

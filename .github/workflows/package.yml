@@ -4,6 +4,11 @@ name: Package
 # 下載 go2rtc → 打包 → 檢查 go2rtc 已隨附（Mac 並檢查簽章）→ Electron 冒煙測試 → 上傳 workflow artifacts。
 on:
   workflow_call:
+    inputs:
+      build-number:
+        description: 有給時版本號改成「package.json 的 major.minor」.build-number（發布用；App 內更新靠版本號比較新舊）
+        type: string
+        default: ""
 
 permissions:
   contents: read
@@ -34,6 +39,16 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+
+      - name: 設定版本號（發布用）
+        if: inputs.build-number != ''
+        shell: bash
+        env:
+          BUILD_NUMBER: ${{ inputs.build-number }}
+        run: |
+          base="$(node -p "require('./package.json').version.split('.').slice(0, 2).join('.')")"
+          npm pkg set version="$base.$BUILD_NUMBER"
+          echo "version: $(node -p "require('./package.json').version")"
 
       - name: 確認是 Apple 晶片 runner
         if: matrix.label == 'mac-arm64'
