@@ -1,4 +1,4 @@
-// 監視器頁：分割 1／4／9／16、頻道勾選、畫面牆畫質（子碼流／主碼流）、雙擊全螢幕（預設主碼流，可切換）、同時串流上限、分頁隱藏時關閉全部串流。
+// 監視器頁：分割 1／4／9／16、頻道勾選、畫面牆畫質（子碼流／主碼流）、雙擊全螢幕（預設子碼流，可切換為主碼流）、同時串流上限、分頁隱藏時關閉全部串流。
 //
 // 串流一律由 syncStreams() 依「目前應該開啟哪些」統一對帳：
 //   - 分頁隱藏（visibilitychange）→ 全部關閉；回來再開
@@ -265,13 +265,13 @@ export function createViewer(el, ctx, { onAddNvr, onManage, uiLib }) {
     const videoBox = h('div', { class: 'cam-video' });
     const dot = h('span', { class: 'cam-dot', 'aria-hidden': 'true' });
     const full = h('button', {
-      type: 'button', class: 'cam-icon-btn', 'aria-label': `${channel.name} 主碼流全螢幕`, title: '主碼流全螢幕（也可雙擊畫面）',
+      type: 'button', class: 'cam-icon-btn', 'aria-label': `${channel.name} 全螢幕`, title: '全螢幕（也可雙擊畫面；預設子碼流，可切換主碼流）',
       onclick: (e) => { e.stopPropagation(); openFull(channel.key); },
     }, icon('external', { size: 16 }));
     const label = h('div', { class: 'cam-tile-label' }, dot, h('span', { class: 'cam-tile-name' }, channel.name), full);
     const node = h('div', {
       class: 'cam-tile', role: 'listitem', tabindex: '0', 'data-key': channel.key, 'data-stream': name, 'data-state': 'idle',
-      'aria-label': `${channel.name}，雙擊或按 Enter 看主碼流`,
+      'aria-label': `${channel.name}，雙擊或按 Enter 開全螢幕`,
       ondblclick: () => openFull(channel.key),
       onkeydown: (e) => { if (e.key === 'Enter' && e.target === node) openFull(channel.key); },
     }, videoBox, label, overlay);
@@ -391,13 +391,13 @@ export function createViewer(el, ctx, { onAddNvr, onManage, uiLib }) {
     }
   }
 
-  // ------------------------------------------------------------ 全螢幕（主碼流）
+  // ------------------------------------------------------------ 全螢幕（預設子碼流，可切換主碼流）
   function openFull(key) {
     const channel = channelOf(key);
     if (!channel || st.full || st.destroyed) return;
     st.full = key;
     const opener = document.activeElement;
-    let kind = 'main';
+    let kind = 'sub'; // 預設子碼流：開得快、不吃頻寬；要看細節再切主碼流
     const nameOf = () => streamName(channel.nvrId, channel.ch, kind);
     const msg = h('span', { class: 'cam-tile-msg' });
     const retry = h('button', { type: 'button', class: 'btn small cam-retry', hidden: true, onclick: () => view.player?.retry() }, '重試');
@@ -451,7 +451,7 @@ export function createViewer(el, ctx, { onAddNvr, onManage, uiLib }) {
     st.fullView = view;
     document.body.append(node);
     document.documentElement.classList.add('cam-full-open');
-    syncStreams(); // 格子暫停、主碼流開始
+    syncStreams(); // 格子暫停、全螢幕串流開始
     closeBtn.focus();
   }
 

@@ -18,7 +18,7 @@ const ART = {
     <rect class="sv-track" x="150" y="156" width="180" height="22" rx="8"/><text class="sv-t m" x="162" y="172">帳號 admin</text>
     <rect class="sv-track" x="150" y="188" width="180" height="22" rx="8"/><text class="sv-t m" x="162" y="204">密碼 ••••••••</text></svg>`,
   codec: `<svg viewBox="0 0 480 300" role="img"><rect class="sv-soft" x="20" y="30" width="440" height="240" rx="18"/>
-    <rect class="sv-surface sv-edge" x="60" y="70" width="170" height="160" rx="12"/><text class="sv-t" x="145" y="104" text-anchor="middle">主碼流</text><text class="sv-t m" x="145" y="130" text-anchor="middle">高畫質（全螢幕用）</text>
+    <rect class="sv-surface sv-edge" x="60" y="70" width="170" height="160" rx="12"/><text class="sv-t" x="145" y="104" text-anchor="middle">主碼流</text><text class="sv-t m" x="145" y="130" text-anchor="middle">高畫質（看細節用）</text>
     <rect class="sv-surface sv-edge" x="250" y="70" width="170" height="160" rx="12"/><text class="sv-t" x="335" y="104" text-anchor="middle">子碼流</text><text class="sv-t m" x="335" y="130" text-anchor="middle">畫面牆用</text>
     <rect class="sv-ok" x="285" y="160" width="100" height="30" rx="15"/><text class="sv-t w" x="335" y="180" text-anchor="middle">H.264</text></svg>`,
   channel: `<svg viewBox="0 0 480 300" role="img"><rect class="sv-soft" x="20" y="30" width="440" height="240" rx="18"/>
@@ -73,7 +73,7 @@ export function createRtspGuide(uiLib, templates = []) {
           '在 NVR 的「編碼設定」（或「視訊」）找到「子碼流」。',
           '把編碼格式改成 H.264（不要用 H.265 / H.265+ / Smart Codec）。',
           '解析度建議 640×360 到 1280×720，影格率 10–15 即可。',
-        ), tip('瀏覽器對 H.265 支援不穩，畫面牆一律使用子碼流，所以子碼流一定要是 H.264。主碼流（雙擊畫面才會用）則不受限制。')),
+        ), tip('瀏覽器對 H.265 支援不穩，畫面牆與全螢幕預設使用子碼流，所以子碼流一定要是 H.264。主碼流（要在畫質設定或全螢幕手動切換才會用）則不受限制。')),
       },
       {
         label: '頻道編號',

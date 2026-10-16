@@ -86,13 +86,16 @@
 .cam-pager { display: flex; align-items: center; justify-content: center; gap: 12px; }
 .cam-pager-text { color: var(--muted); font-size: 13px; }
 
-/* ---- 全螢幕（主碼流） ---- */
+/* ---- 全螢幕（預設子碼流，可切換主碼流） ---- */
 html.cam-full-open { overflow: hidden; }
 .cam-full {
   position: fixed; inset: 0; z-index: 150; display: flex; flex-direction: column; background: #05080f; color: #fff; outline: none;
 }
 .cam-full-bar { position: relative; z-index: 2; display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: #0009; }
 .cam-full-bar .cam-muted { color: #b8c3dc; }
+/* 黑底工具列上的按鈕：一般 .btn 是深色字，在這裡看不到，改成半透明白底白字 */
+.cam-full-bar .btn { background: #ffffff26; color: #fff; box-shadow: inset 0 0 0 1px #ffffff40; }
+.cam-full-bar .btn:hover, .cam-full-bar .btn:focus-visible { background: #ffffff40; color: #fff; box-shadow: inset 0 0 0 1px #ffffff80; }
 .cam-full .cam-video { top: 52px; }
 .cam-full .cam-tile-overlay { top: 52px; padding-top: 12px; }
 .cam-full[data-state="live"] .cam-tile-overlay { display: none; }

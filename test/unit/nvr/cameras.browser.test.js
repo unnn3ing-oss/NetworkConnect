@@ -151,15 +151,22 @@ describe('cameras 頁（Chromium）', async () => {
     await t.waitConns(4);
   });
 
-  test('雙擊格子：該頻道主碼流全螢幕（格子暫停，只剩一路）；關閉後切回子碼流', { skip }, async () => {
+  test('雙擊格子：該頻道全螢幕，預設子碼流（格子暫停，只剩一路）；工具列按鈕在黑底上看得到', { skip }, async () => {
     const t = await boot();
     await t.waitConns(4);
     await t.page.dblclick('.cam-tile[data-key="nvr_main:3"]');
     await t.page.waitForSelector('.cam-full');
     await t.waitConns(1);
-    assert.equal(t.fake.wsLog.at(-1).src, 'nvr_nvr_main_3_main');
-    assert.equal(await t.page.locator('.cam-full').getAttribute('data-stream'), 'nvr_nvr_main_3_main');
+    assert.equal(t.fake.wsLog.at(-1).src, 'nvr_nvr_main_3_sub');
+    assert.equal(await t.page.locator('.cam-full').getAttribute('data-stream'), 'nvr_nvr_main_3_sub');
     assert.match(await t.page.locator('.cam-full-title').innerText(), /車道/);
+    assert.match(await t.page.locator('.cam-full-bar').innerText(), /子碼流/);
+    // 按鈕文字必須是淺色（工具列是黑底）
+    for (const sel of ['[data-action="toggle-quality"]', '[data-action="close-full"]']) {
+      const color = await t.page.locator(`.cam-full ${sel}`).evaluate((e) => getComputedStyle(e).color);
+      const [r, g, b] = color.match(/\d+/g).map(Number);
+      assert.ok(r + g + b > 600, `${sel} 文字顏色太暗：${color}`);
+    }
 
     await t.page.keyboard.press('Escape');
     await t.page.waitForSelector('.cam-full', { state: 'detached' });
@@ -189,18 +196,19 @@ describe('cameras 頁（Chromium）', async () => {
     assert.ok(t.fake.wsLog.slice(-4).every((x) => x.src.endsWith('_main')));
     assert.equal(await t.page.locator('.cam-quality .nc-seg-btn[data-value="main"]').getAttribute('aria-checked'), 'true');
 
-    // 全螢幕預設主碼流 → 切成子碼流 → 再切回主碼流；始終只有一路
+    // 全螢幕預設子碼流 → 切成主碼流 → 再切回子碼流；始終只有一路
     await t.page.dblclick('.cam-tile[data-key="nvr_main:2"]');
     await t.page.waitForSelector('.cam-full');
     await t.waitConns(1);
-    assert.equal(await t.page.locator('.cam-full').getAttribute('data-stream'), 'nvr_nvr_main_2_main');
-    assert.match(await t.page.locator('.cam-full-bar').innerText(), /主碼流/);
-    await t.page.click('.cam-full [data-action="toggle-quality"]');
-    await waitFor(() => t.fake.wsLog.at(-1).src === 'nvr_nvr_main_2_sub' && t.fake.connectionCount() === 1, { message: '全螢幕沒有切到子碼流' });
     assert.equal(await t.page.locator('.cam-full').getAttribute('data-stream'), 'nvr_nvr_main_2_sub');
     assert.match(await t.page.locator('[data-action="toggle-quality"]').innerText(), /切換為主碼流/);
     await t.page.click('.cam-full [data-action="toggle-quality"]');
-    await waitFor(() => t.fake.wsLog.at(-1).src === 'nvr_nvr_main_2_main' && t.fake.connectionCount() === 1, { message: '全螢幕沒有切回主碼流' });
+    await waitFor(() => t.fake.wsLog.at(-1).src === 'nvr_nvr_main_2_main' && t.fake.connectionCount() === 1, { message: '全螢幕沒有切到主碼流' });
+    assert.equal(await t.page.locator('.cam-full').getAttribute('data-stream'), 'nvr_nvr_main_2_main');
+    assert.match(await t.page.locator('.cam-full-bar').innerText(), /主碼流/);
+    assert.match(await t.page.locator('[data-action="toggle-quality"]').innerText(), /切換為子碼流/);
+    await t.page.click('.cam-full [data-action="toggle-quality"]');
+    await waitFor(() => t.fake.wsLog.at(-1).src === 'nvr_nvr_main_2_sub' && t.fake.connectionCount() === 1, { message: '全螢幕沒有切回子碼流' });
 
     // 關閉全螢幕：畫面牆回到使用者選的主碼流；切回子碼流也生效
     await t.page.keyboard.press('Escape');
