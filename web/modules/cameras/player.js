@@ -9,6 +9,7 @@
 //    由本頁的 viewer 統一在分頁隱藏時關閉全部串流。
 //  - 只要求影像（media='video'），畫面牆不需要聲音，省頻寬與 CPU。
 import { VideoRTC } from '/vendor/video-rtc.js';
+import { browserSupportsHevc, describeStreamError } from './logic.js';
 
 const TAG = 'nc-video';
 
@@ -62,7 +63,17 @@ export class NcVideo extends VideoRTC {
       }
       try {
         const msg = JSON.parse(ev.data);
-        if (msg.type === 'error') this.emit('error', String(msg.value ?? ''));
+        if (msg.type !== 'error') return;
+        const { message, fatal } = describeStreamError(msg.value, { hevc: browserSupportsHevc() });
+        if (fatal) {
+          // 編碼不合：重連也不會好，也不要讓 VideoRTC 再退到 mjpeg（需要 ffmpeg，錯誤訊息只會更難懂）
+          this.fatal = true;
+          this.ondata = () => {};
+          this.emit('error', message);
+          ws.close();
+          return;
+        }
+        this.emit('error', message);
       } catch {
         // 不是 JSON 的文字訊息：忽略
       }

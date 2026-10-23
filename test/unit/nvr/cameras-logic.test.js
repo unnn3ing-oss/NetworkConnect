@@ -3,7 +3,7 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFixture } from '../../../contracts/index.js';
 import {
-  CUSTOM_URL_STARTER, applyBrand, applyLimit, clampLimit, clampQuality, clampSplit, connectionPayload, connectionSignature, describeTest, ensureChannels, flattenChannels,
+  CUSTOM_URL_STARTER, applyBrand, browserSupportsHevc, describeStreamError, applyLimit, clampLimit, clampQuality, clampSplit, connectionPayload, connectionSignature, describeTest, ensureChannels, flattenChannels,
   gridCols, newWizardState, pageCount, pageSlice, parseTarget, previewUrl, selectedKeys, stateFromNvr, streamName, validateChannels,
   validateConnection, wsPath,
 } from '../../../web/modules/cameras/logic.js';
@@ -223,4 +223,30 @@ describe('精靈表單', () => {
 test('clampQuality：只有 main 是主碼流，其他（含舊設定、亂填）一律子碼流', () => {
   assert.equal(clampQuality('main'), 'main');
   for (const v of ['sub', '', null, undefined, 'MAIN', 'hd']) assert.equal(clampQuality(v), 'sub');
+});
+
+describe('describeStreamError／browserSupportsHevc', () => {
+  const H265 = 'mjpeg: streams: codecs not matched: video:H265, audio:PCMU => video:JPEG, video:RAW';
+  test('H.265 編碼不合 → 說明要改成 H.264，且視為 fatal（不重連）', () => {
+    const r = describeStreamError(H265, { hevc: false });
+    assert.equal(r.fatal, true);
+    assert.match(r.message, /H\.265.*不支援.*H\.264/);
+    assert.match(describeStreamError(H265, { hevc: true }).message, /H\.265.*沒辦法解.*H\.264/);
+  });
+  test('箭頭左邊空白 → NVR 沒有提供影像', () => {
+    const r = describeStreamError('mse: streams: codecs not matched:  => video:H264');
+    assert.equal(r.fatal, true);
+    assert.match(r.message, /沒有提供影像/);
+  });
+  test('其他編碼 → 列出編碼；其他錯誤原樣顯示且不是 fatal', () => {
+    assert.match(describeStreamError('mse: streams: codecs not matched: video:MJPEG => video:H264').message, /MJPEG/);
+    assert.deepEqual(describeStreamError('streams: wrong user/pass'), { message: 'streams: wrong user/pass', fatal: false });
+    assert.equal(describeStreamError('').message, '串流發生錯誤');
+  });
+  test('browserSupportsHevc：依 MediaSource.isTypeSupported，丟錯或不存在視為不支援', () => {
+    assert.equal(browserSupportsHevc({ MediaSource: { isTypeSupported: (t) => t.includes('hvc1') } }), true);
+    assert.equal(browserSupportsHevc({ MediaSource: { isTypeSupported: () => false } }), false);
+    assert.equal(browserSupportsHevc({ MediaSource: { isTypeSupported: () => { throw new Error('x'); } } }), false);
+    assert.equal(browserSupportsHevc({}), false);
+  });
 });

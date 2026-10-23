@@ -182,6 +182,23 @@ describe('cameras 頁（Chromium）', async () => {
     assert.equal(await t.page.locator('.cam-full').count(), 0);
   });
 
+  test('H.265 播不出來：格子顯示看得懂的說明（改成 H.264），不再退到 mjpeg、也不一直重連', { skip }, async () => {
+    const t = await boot();
+    t.fake.setStreamError('nvr_nvr_main_1_sub', 'mse: streams: codecs not matched: video:H265, audio:PCMU => video:H264, audio:AAC, audio:FLAC');
+    await t.page.waitForSelector('.cam-tile[data-key="nvr_main:1"][data-state="error"]');
+    const msg = await t.page.locator('.cam-tile[data-key="nvr_main:1"] .cam-tile-msg').innerText();
+    assert.match(msg, /H\.265/);
+    assert.match(msg, /H\.264/);
+    assert.doesNotMatch(msg, /mjpeg|codecs not matched/);
+    const tries = () => t.fake.wsLog.filter((x) => x.src === 'nvr_nvr_main_1_sub').length;
+    const before = tries();
+    await new Promise((r) => setTimeout(r, 3500)); // VideoRTC 的重連間隔是幾秒；fatal 之後不應再連
+    assert.equal(tries(), before, '編碼不合時不應自動重連');
+    assert.ok(!t.fake.received.some((x) => x.src === 'nvr_nvr_main_1_sub' && x.message.type === 'mjpeg'), '不應再要求 mjpeg');
+    // 其他頻道照常播放
+    await t.page.waitForSelector('.cam-tile[data-key="nvr_main:2"][data-state="live"]');
+  });
+
   test('畫質切換：畫面牆改用主碼流（記住設定）；全螢幕可在主／子碼流之間切換', { skip }, async () => {
     const t = await boot();
     await t.waitConns(4);
