@@ -199,6 +199,28 @@ describe('cameras 頁（Chromium）', async () => {
     await t.page.waitForSelector('.cam-tile[data-key="nvr_main:2"][data-state="live"]');
   });
 
+  test('播放中斷、重連時 NVR 暫時回錯誤：顯示說明並自動重試，NVR 恢復後自己接回來（不會改要 mjpeg）', { skip }, async () => {
+    const t = await boot();
+    const tile = '.cam-tile[data-key="nvr_main:1"]';
+    await t.page.waitForSelector(`${tile}[data-state="live"]`);
+    // 模擬：NVR 這一路暫時連不上，且播放器的連線被中斷（重連間隔調短，測試才不用等 15 秒）
+    t.fake.setStreamError('nvr_nvr_main_1_sub', 'mse: streams: dial tcp 192.168.1.20:554: i/o timeout');
+    await t.page.evaluate((sel) => {
+      const p = document.querySelector(`${sel} nc-video`);
+      p.RECONNECT_TIMEOUT = 300;
+      p.connectTS = 0;
+      p.ws.close();
+    }, tile);
+    await t.page.waitForSelector(`${tile}[data-state="error"]`);
+    await waitFor(async () => /自動重試/.test(await t.page.locator(`${tile} .cam-tile-msg`).innerText()), { message: '沒有顯示自動重試的說明' });
+    const before = t.fake.wsLog.filter((x) => x.src === 'nvr_nvr_main_1_sub').length;
+    await waitFor(() => t.fake.wsLog.filter((x) => x.src === 'nvr_nvr_main_1_sub').length > before + 1, { message: '沒有自動重連' });
+    // NVR 恢復 → 自己接回來
+    t.fake.setStreamError('nvr_nvr_main_1_sub', null);
+    await t.page.waitForSelector(`${tile}[data-state="live"]`, { timeout: 10000 });
+    assert.ok(!t.fake.received.some((x) => x.message.type === 'mjpeg'), '不應改要 mjpeg');
+  });
+
   test('畫質切換：畫面牆改用主碼流（記住設定）；全螢幕可在主／子碼流之間切換', { skip }, async () => {
     const t = await boot();
     await t.waitConns(4);

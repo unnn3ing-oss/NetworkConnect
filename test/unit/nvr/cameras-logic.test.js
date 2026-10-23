@@ -227,21 +227,24 @@ test('clampQuality：只有 main 是主碼流，其他（含舊設定、亂填�
 
 describe('describeStreamError／browserSupportsHevc', () => {
   const H265 = 'mjpeg: streams: codecs not matched: video:H265, audio:PCMU => video:JPEG, video:RAW';
-  test('H.265 編碼不合 → 說明要改成 H.264，且視為 fatal（不重連）', () => {
+  test('H.265 編碼不合：播放器不支援 H.265 → 說明要改 H.264 且 fatal；播放器支援 → 暫時性問題，自動重試', () => {
     const r = describeStreamError(H265, { hevc: false });
     assert.equal(r.fatal, true);
     assert.match(r.message, /H\.265.*不支援.*H\.264/);
-    assert.match(describeStreamError(H265, { hevc: true }).message, /H\.265.*沒辦法解.*H\.264/);
+    const ok = describeStreamError(H265, { hevc: true });
+    assert.equal(ok.fatal, false);
+    assert.match(ok.message, /自動重試/);
   });
   test('箭頭左邊空白 → NVR 沒有提供影像', () => {
     const r = describeStreamError('mse: streams: codecs not matched:  => video:H264');
     assert.equal(r.fatal, true);
     assert.match(r.message, /沒有提供影像/);
   });
-  test('其他編碼 → 列出編碼；其他錯誤原樣顯示且不是 fatal', () => {
+  test('其他編碼 → 列出編碼；其他錯誤原樣顯示（遮帳密）且自動重試', () => {
     assert.match(describeStreamError('mse: streams: codecs not matched: video:MJPEG => video:H264').message, /MJPEG/);
-    assert.deepEqual(describeStreamError('streams: wrong user/pass'), { message: 'streams: wrong user/pass', fatal: false });
-    assert.equal(describeStreamError('').message, '串流發生錯誤');
+    assert.deepEqual(describeStreamError('streams: wrong user/pass'), { message: 'streams: wrong user/pass（稍後自動重試）', fatal: false });
+    assert.equal(describeStreamError('').message, '串流發生錯誤（稍後自動重試）');
+    assert.doesNotMatch(describeStreamError('mse: dial rtsp://admin:hunter2@10.0.0.9/x failed').message, /hunter2/);
   });
   test('browserSupportsHevc：依 MediaSource.isTypeSupported，丟錯或不存在視為不支援', () => {
     assert.equal(browserSupportsHevc({ MediaSource: { isTypeSupported: (t) => t.includes('hvc1') } }), true);

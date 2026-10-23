@@ -92,6 +92,29 @@ describe('go2rtc.yaml', () => {
   });
 });
 
+describe('go2rtc 輸出', () => {
+  test('go2rtc 的警告／錯誤逐行寫進日誌（warn），RTSP 帳密被遮掉', { skip }, async () => {
+    const dir = makeTmpDir();
+    const warns = [];
+    const proc = createGo2rtcProcess({
+      binPath: fakeBinary(dir),
+      dir: path.join(dir, 'g'),
+      log: { info() {}, warn: (m) => warns.push(m), error() {}, debug() {} },
+      spawnFn: (cmd, args, opts) =>
+        spawn(process.execPath, ['-e', 'process.stderr.write("12:00:01 WRN [rtsp] url=rtsp://admin:hunter2@10.0.0.9/x error=EOF\\n12:00:02 ERR second line\\n"); setInterval(() => {}, 1000)'], { ...opts, stdio: ['ignore', 'pipe', 'pipe'] }),
+    });
+    await proc.start();
+    try {
+      await waitFor(() => warns.length >= 2, { message: '沒有寫進日誌' });
+      assert.match(warns[0], /^go2rtc: 12:00:01 WRN \[rtsp\] url=rtsp:\/\/\*\*\*@10\.0\.0\.9\/x error=EOF$/);
+      assert.match(warns[1], /ERR second line/);
+      assert.ok(warns.every((w) => !w.includes('hunter2')));
+    } finally {
+      await proc.stop();
+    }
+  });
+});
+
 describe('生命週期', () => {
   test('start() 寫 pid 檔；stop() 後子行程確實結束且 pid 檔移除', { skip }, async () => {
     const dir = makeTmpDir();

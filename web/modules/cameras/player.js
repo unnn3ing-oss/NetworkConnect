@@ -4,7 +4,10 @@
 //
 // 與預設的差異：
 //  - mode 不含 webrtc／hls：伺服器只代理 WebSocket（/api/nvr/ws），go2rtc 的 WebRTC 與 HTTP 都不對外。
-//    沒有 MSE 的瀏覽器（iPhone Safari 16 以前）會依 VideoRTC 的順序回退到 mp4（走同一條 WebSocket），最後 mjpeg。
+//    沒有 MSE 的瀏覽器（iPhone Safari 16 以前）會回退到 mp4（走同一條 WebSocket）。
+//    不含 mjpeg：go2rtc 要有 ffmpeg 才能把 H.264／H.265 轉成 JPEG，本 App 沒有附；
+//    留著只會在 MSE 暫時失敗時改要 mjpeg，得到看不懂的「codecs not matched … => video:JPEG」錯誤，而且不會再自動重連。
+//  - 錯誤訊息（例：NVR 那一路暫時斷線）：關掉連線讓 VideoRTC 自動重連；只有重連也不會好的錯誤才停下來等使用者按重試。
 //  - background=true：不註冊 VideoRTC 對 document 的 visibilitychange 監聽（它不會移除，會洩漏），
 //    由本頁的 viewer 統一在分頁隱藏時關閉全部串流。
 //  - 只要求影像（media='video'），畫面牆不需要聲音，省頻寬與 CPU。
@@ -16,7 +19,7 @@ const TAG = 'nc-video';
 export class NcVideo extends VideoRTC {
   constructor() {
     super();
-    this.mode = 'mse,mp4,mjpeg';
+    this.mode = 'mse,mp4';
     this.media = 'video';
     this.background = true;
     this.visibilityCheck = false;
@@ -34,6 +37,10 @@ export class NcVideo extends VideoRTC {
     this.video.setAttribute('playsinline', '');
     this.video.setAttribute('muted', '');
     this.video.disablePictureInPicture = true;
+    // VideoRTC 在畫面解碼失敗時會關掉連線重連；記下原因，格子上才看得出是「解碼失敗」而不是「網路斷線」
+    this.video.addEventListener('error', () => {
+      this.videoError = this.video.error?.code === 3 ? 'decode' : 'other';
+    });
   }
 
   emit(state, detail) {
@@ -52,6 +59,7 @@ export class NcVideo extends VideoRTC {
     const ws = this.ws;
     let gotData = false;
     this.fatal = false;
+    this.lastErrorShown = false;
     ws.addEventListener('message', (ev) => {
       if (this.fatal) return;
       if (typeof ev.data !== 'string') {
@@ -65,15 +73,15 @@ export class NcVideo extends VideoRTC {
         const msg = JSON.parse(ev.data);
         if (msg.type !== 'error') return;
         const { message, fatal } = describeStreamError(msg.value, { hevc: browserSupportsHevc() });
+        console.warn('[nc-video] 串流錯誤：', msg.value);
         if (fatal) {
-          // 編碼不合：重連也不會好，也不要讓 VideoRTC 再退到 mjpeg（需要 ffmpeg，錯誤訊息只會更難懂）
+          // 重連也不會好（例：播放器不支援 H.265）：停下來等使用者按重試
           this.fatal = true;
           this.ondata = () => {};
-          this.emit('error', message);
-          ws.close();
-          return;
         }
         this.emit('error', message);
+        this.lastErrorShown = true;
+        ws.close(); // 非 fatal：交給 VideoRTC 的 onclose 自動重連
       } catch {
         // 不是 JSON 的文字訊息：忽略
       }
@@ -88,9 +96,15 @@ export class NcVideo extends VideoRTC {
       if (this.fatal) {
         clearTimeout(this.reconnectTID);
         this.reconnectTID = 0;
+      } else if (this.lastErrorShown) {
+        // 已經顯示過伺服器給的錯誤說明，不要被泛用訊息蓋掉
+        this.lastErrorShown = false;
+      } else if (this.videoError === 'decode') {
+        this.emit('error', '畫面解碼失敗，重新連線中…');
       } else {
         this.emit('error', gotData ? '連線中斷，重新連線中…' : '連不上串流，稍後自動重試');
       }
+      this.videoError = null;
     });
     return started;
   }

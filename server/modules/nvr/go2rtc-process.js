@@ -5,6 +5,7 @@
 import { spawn as nodeSpawn, execFile, execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { redactUrls } from './templates.js';
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -165,7 +166,11 @@ export function createGo2rtcProcess({
     current = rec;
     state = 'running';
 
-    const drain = (stream) => stream?.on?.('data', (d) => log.debug?.(`go2rtc: ${String(d).trimEnd().slice(0, 500)}`));
+    // go2rtc 設為 log level warn，平常不輸出；有輸出就是警告或錯誤（例：NVR 斷線、解碼問題），寫進日誌方便查原因。帳密一律遮掉。
+    const drain = (stream) =>
+      stream?.on?.('data', (d) => {
+        for (const line of String(d).split(/\r?\n/)) if (line.trim()) log.warn?.(`go2rtc: ${redactUrls(line.trimEnd()).slice(0, 500)}`);
+      });
     drain(child.stdout);
     drain(child.stderr);
 

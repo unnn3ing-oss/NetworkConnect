@@ -220,23 +220,20 @@ export function browserSupportsHevc(win = globalThis) {
 
 /**
  * 把 go2rtc 串流錯誤翻成格子上的說明。
- * 「<模式>: streams: codecs not matched: <NVR 提供的> => <播放器能播的>」代表編碼不合，重連也不會好（fatal）。
- * 播放器先試 MSE，失敗才退到 mjpeg（需要 ffmpeg，本 App 沒有附），所以真正的原因要看 NVR 提供的編碼。
+ * 「<模式>: streams: codecs not matched: <NVR 提供的> => <播放器能播的>」代表編碼不合。
+ * 只有「播放器確定不支援 H.265」或「NVR 沒給影像」這類重連也不會好的情況才是 fatal（停止自動重連，等使用者按重試）；
+ * 其他錯誤（含播放器支援 H.265 卻仍不合，通常是 NVR 那一路暫時斷線）都會自動重試。
  * @returns {{message: string, fatal: boolean}}
  */
 export function describeStreamError(raw, { hevc = false } = {}) {
-  const text = String(raw ?? '').trim();
+  const text = String(raw ?? '').trim().replace(/(rtsps?:\/\/)[^\s@/]*@/gi, '$1***@');
   const m = /codecs not matched:\s*(.*?)\s*=>\s*(.*)$/i.exec(text);
-  if (!m) return { message: text || '串流發生錯誤', fatal: false };
+  if (!m) return { message: `${text || '串流發生錯誤'}（稍後自動重試）`, fatal: false };
   const source = m[1];
   if (!source) return { message: 'NVR 有回應，但這個頻道沒有提供影像（請確認有接攝影機、碼流代號正確）', fatal: true };
   if (/H265|HEVC/i.test(source)) {
-    return {
-      message: hevc
-        ? '這個頻道是 H.265，但播放器沒辦法解這路影像。請到 NVR 把這個頻道（這個碼流）的編碼改成 H.264。'
-        : '這個頻道是 H.265，這台電腦的播放器不支援。請到 NVR 把這個頻道（這個碼流）的編碼改成 H.264，或改看另一個碼流。',
-      fatal: true,
-    };
+    if (hevc) return { message: '這個頻道暫時無法播放，稍後自動重試', fatal: false };
+    return { message: '這個頻道是 H.265，這台電腦的播放器不支援。請到 NVR 把這個頻道（這個碼流）的編碼改成 H.264，或改看另一個碼流。', fatal: true };
   }
   const codecs = source.replace(/(video|audio):/gi, '').replace(/\s*,\s*/g, '、');
   return { message: `播放器不支援這個頻道的編碼（${codecs}）。請到 NVR 把編碼改成 H.264。`, fatal: true };
