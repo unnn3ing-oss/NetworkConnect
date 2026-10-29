@@ -131,6 +131,9 @@ export function buildStyle(c, { edgeStyle = 'straight' } = {}) {
     { selector: 'edge.m-poe', style: { 'line-color': c.warn, color: c.warn } },
     { selector: 'edge.m-other', style: { 'line-color': c.disabled } },
     { selector: 'edge.faded', style: { opacity: 0.12 } },
+    // 依樓層分群：跨樓層連線的轉接點（看不見，只用來讓線從設備之間的空位往下走）
+    { selector: 'node.via', style: { width: 1, height: 1, opacity: 0, label: '', 'background-image': 'none', 'border-width': 0, events: 'no' } },
+    { selector: 'edge.routed', style: { display: 'none' } },
     // 直角連線：從上游往下走到兩層中間再橫移、最後垂直進入下游；標籤保持水平
     ...(orthogonal
       ? [{ selector: 'edge', style: { 'curve-style': 'taxi', 'taxi-direction': 'downward', 'taxi-turn': '50%', 'taxi-radius': 6, 'target-text-rotation': 'none', 'target-text-offset': 30 } }]

@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { spread, tidyX, bandLayout, levelsByY, treeOrder } from '../../../web/modules/topology/layout.js';
+import { spread, tidyX, bandLayout, levelsByY, treeOrder, orthogonalRoutes, crossFloorVias } from '../../../web/modules/topology/layout.js';
 
 const GAP = 100;
 const it = (id, level, x, parent = null, group = null) => ({ id, level, x, parent, group });
@@ -108,5 +108,61 @@ describe('treeOrder', () => {
   test('同樣輸入永遠得到同樣結果（重新排版不會越排越大）', () => {
     const items = [{ id: 'r' }, { id: 'a', parent: 'r' }, { id: 'b', parent: 'a' }];
     assert.deepEqual([...treeOrder(items)], [...treeOrder(items)]);
+  });
+});
+
+describe('orthogonalRoutes', () => {
+  const pos = new Map([['sw', { x: 0 }], ['a', { x: -200 }], ['b', { x: -100 }], ['c', { x: 200 }], ['d', { x: 300 }], ['x', { x: 0 }]]);
+
+  test('同一來源只有一種連線：從中間出發、轉折高度用基準值', () => {
+    const r = orthogonalRoutes([{ id: 'e1', source: 'sw', target: 'a', medium: 'm-wired' }], pos);
+    assert.deepEqual(r.get('e1'), { dx: 0, turn: 34 });
+  });
+
+  test('不同連線種類分開出發點與轉折高度；同種共用；左邊那組從左邊出發', () => {
+    const r = orthogonalRoutes([
+      { id: 'w1', source: 'sw', target: 'c', medium: 'm-wired' },
+      { id: 'w2', source: 'sw', target: 'd', medium: 'm-wired' },
+      { id: 'p1', source: 'sw', target: 'a', medium: 'm-poe' },
+      { id: 'p2', source: 'sw', target: 'b', medium: 'm-poe' },
+    ], pos);
+    assert.deepEqual(r.get('p1'), r.get('p2'));
+    assert.deepEqual(r.get('w1'), r.get('w2'));
+    assert.ok(r.get('p1').dx < r.get('w1').dx);
+    assert.notEqual(r.get('p1').turn, r.get('w1').turn);
+    assert.equal(r.get('p1').dx + r.get('w1').dx, 0);
+  });
+
+  test('端點不在 pos 裡的連線略過', () => {
+    const r = orthogonalRoutes([{ id: 'e', source: 'sw', target: 'nope', medium: 'm-wired' }], pos);
+    assert.equal(r.size, 0);
+  });
+});
+
+describe('crossFloorVias', () => {
+  const items = [
+    { id: 'core', group: '2F', x: 0 },
+    { id: 'ap', parent: 'core', group: '2F', x: 0, medium: 'm-wired' },
+    { id: 'cam1', parent: 'core', group: '1F', x: 0, medium: 'm-poe' },
+    { id: 'cam2', parent: 'core', group: '1F', x: 0, medium: 'm-poe' },
+    { id: 'tv', parent: 'core', group: '1F', x: 0, medium: 'm-wired' },
+    { id: 'up', parent: 'cam1', group: '2F', x: 0 },
+  ];
+
+  test('同上游＋同連線＋同目標樓層共用一個轉接點；轉接點放在上游的樓層', () => {
+    const { vias, viaOf } = crossFloorVias(items, ['2F', '1F']);
+    assert.equal(vias.length, 2);
+    assert.equal(viaOf.get('cam1'), viaOf.get('cam2'));
+    assert.notEqual(viaOf.get('cam1'), viaOf.get('tv'));
+    for (const v of vias) {
+      assert.equal(v.parent, 'core');
+      assert.equal(v.group, '2F');
+    }
+  });
+
+  test('同樓層與往上的連線不加轉接點', () => {
+    const { viaOf } = crossFloorVias(items, ['2F', '1F']);
+    assert.equal(viaOf.has('ap'), false);
+    assert.equal(viaOf.has('up'), false);
   });
 });

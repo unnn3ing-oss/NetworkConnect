@@ -140,3 +140,62 @@ export function treeOrder(items, { gap = 100 } = {}) {
   for (const it of items) visit(it.id, 0);
   return out;
 }
+
+/**
+ * 直角連線的走線：同一台設備往下的連線依「連線種類」（有線、Wi-Fi、Mesh、光纖…）分組，
+ * 每組各走一條主幹——從設備底部出發的位置左右錯開（dx），橫向主幹的高度也錯開（turn）。
+ * 否則不同種類的連線會共用同一段線，實線、虛線、點線疊在一起分不出來。同種類的連線共用主幹沒有問題（樣式相同）。
+ * @param {{id: string, source: string, target: string, medium: string}[]} edges
+ * @param {Map<string, {x: number, y: number}>} pos 節點位置
+ * @returns {Map<string, {dx: number, turn: number}>} dx＝出發點相對設備中心的水平位移（px）；turn＝離開設備後多遠轉彎（px）
+ */
+export function orthogonalRoutes(edges, pos, { stemGap = 16, baseTurn = 34, turnStep = 10 } = {}) {
+  const bySource = new Map();
+  for (const e of edges) {
+    if (!pos.has(e.source) || !pos.has(e.target)) continue;
+    const groups = bySource.get(e.source) ?? new Map();
+    bySource.set(e.source, groups);
+    groups.set(e.medium, [...(groups.get(e.medium) ?? []), e]);
+  }
+  const out = new Map();
+  for (const groups of bySource.values()) {
+    // 依下游設備的平均 x 由左到右排：左邊那組從左邊出發，主幹才不會互相穿過
+    const list = [...groups.values()]
+      .map((es) => ({ es, mid: es.reduce((s, e) => s + pos.get(e.target).x, 0) / es.length }))
+      .sort((a, b) => a.mid - b.mid);
+    const n = list.length;
+    list.forEach(({ es }, i) => {
+      const dx = n > 1 ? (i - (n - 1) / 2) * stemGap : 0;
+      const turn = baseTurn + i * turnStep;
+      for (const e of es) out.set(e.id, { dx, turn });
+    });
+  }
+  return out;
+}
+
+/**
+ * 依樓層分群時，跨樓層往下的連線要經過中間好幾排設備；直接拉線會穿過、擦過那些設備。
+ * 這裡替「上游在上面樓層」的設備，在上游那一排的下一列預留一個看不見的轉接點（via），
+ * 樹狀排版會把它當成上游的子設備，在兄弟設備之間留出空位，線就從空位往下走。
+ * 同一個上游、同一種連線、同一個目標樓層的設備共用一個轉接點。
+ * @param {{id: string, parent?: string|null, group: string, x: number, medium?: string}[]} items
+ * @param {string[]} groupOrder 樓層由上到下的順序
+ * @returns {{vias: {id: string, parent: string, group: string, x: number, medium: string}[], viaOf: Map<string, string>}}
+ *   viaOf：子設備 id → 轉接點 id
+ */
+export function crossFloorVias(items, groupOrder) {
+  const byId = new Map(items.map((i) => [i.id, i]));
+  const rank = new Map(groupOrder.map((g, i) => [g, i]));
+  const vias = new Map();
+  const viaOf = new Map();
+  for (const it of items) {
+    const p = it.parent ? byId.get(it.parent) : null;
+    if (!p || p.group === it.group) continue;
+    if (!(rank.get(it.group) > rank.get(p.group))) continue; // 只處理往下的連線
+    const medium = it.medium ?? 'm-other';
+    const id = `via:${p.id}:${medium}:${it.group}`;
+    if (!vias.has(id)) vias.set(id, { id, parent: p.id, group: p.group, x: p.x, medium });
+    viaOf.set(it.id, id);
+  }
+  return { vias: [...vias.values()], viaOf };
+}

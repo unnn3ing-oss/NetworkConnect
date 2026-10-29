@@ -2,13 +2,14 @@
 // createTopologyView() 回傳 destroy()；所有 bus 訂閱、計時器、觀察者、cy 實例都在 destroy() 中釋放。
 import { buildElements, fadedIds, statusClass, STATUS_CLASSES } from './graph.js';
 import { buildStyle, readColors } from './style.js';
-import { bandLayout, tidyX, treeOrder } from './layout.js';
+import { bandLayout, crossFloorVias, orthogonalRoutes, tidyX, treeOrder } from './layout.js';
 
 const CSS_ATTR = 'data-nc-topology-css';
 const STORE_KEY = 'nc.topology.groupByFloor';
 const EDGE_KEY = 'nc.topology.edgeStyle';
 const GAP = 104; // 同層節點的水平間距
 const ROW_GAP = 130; // 上下層的垂直間距：留空間給節點名稱與連線標籤
+const VIA_TURN = 52; // 跨樓層連線在離下游多遠的地方橫移（落在樓層外框上緣附近）
 
 function ensureCss() {
   if (document.head.querySelector(`link[${CSS_ATTR}]`)) return;
@@ -235,7 +236,7 @@ export async function createTopologyView(host, ctx) {
       stage.__cy = cy; // 測試用：讓瀏覽器測試能直接檢查圖的狀態
       cy.on('tap', 'node', (evt) => {
         const node = evt.target;
-        if (node.data('isFloor')) return;
+        if (node.data('isFloor') || node.data('isVia')) return;
         bus.emit('device.open', { id: node.id() });
       });
     }
@@ -253,21 +254,67 @@ export async function createTopologyView(host, ctx) {
   function runLayout() {
     if (!cy) return;
     cy.resize();
+    // 上一次排版留下的轉接點與轉接線
+    cy.batch(() => {
+      cy.remove('.via, .via-edge');
+      cy.edges('.routed').removeClass('routed');
+    });
     const nodes = cy.nodes().filter((n) => !n.data('isFloor'));
     const parentOf = new Map();
-    cy.edges().forEach((e) => parentOf.set(e.data('target'), e.data('source')));
-    const base = nodes.map((n) => ({ id: n.id(), parent: parentOf.get(n.id()) ?? null, group: n.data('parent') ?? null }));
+    const edgeOf = new Map();
+    cy.edges().forEach((e) => {
+      parentOf.set(e.data('target'), e.data('source'));
+      edgeOf.set(e.data('target'), e);
+    });
+    const mediumOf = (e) => e?.classes().find((c) => c.startsWith('m-')) ?? 'm-other';
+    const base = nodes.map((n) => ({ id: n.id(), parent: parentOf.get(n.id()) ?? null, group: n.data('parent') ?? null, medium: mediumOf(edgeOf.get(n.id())) }));
     const order = treeOrder(base, { gap: GAP });
     const items = base.map((it) => ({ ...it, ...order.get(it.id) }));
-    let pos;
     if (groupByFloor) {
-      pos = bandLayout(items, { gap: GAP, rowGap: ROW_GAP, groupOrder: cy.nodes('.floor').map((n) => n.id()) });
+      const groupOrder = cy.nodes('.floor').map((n) => n.id());
+      const { vias, viaOf } = crossFloorVias(items, groupOrder);
+      const pos = bandLayout([...items, ...vias], { gap: GAP, rowGap: ROW_GAP, groupOrder });
+      cy.batch(() => {
+        nodes.forEach((n) => n.position(pos.get(n.id())));
+        // 跨樓層連線改經過轉接點：上游 → 轉接點（一條）→ 各個下游；原本的連線隱藏
+        for (const v of vias) {
+          cy.add({ group: 'nodes', data: { id: v.id, isVia: true, parent: v.group }, classes: 'via', position: pos.get(v.id) });
+          cy.add({ group: 'edges', data: { id: `${v.id}>in`, source: v.parent, target: v.id, label: '' }, classes: `${v.medium} via-edge` });
+        }
+        for (const [child, via] of viaOf) {
+          const e = edgeOf.get(child);
+          e.addClass('routed');
+          const cls = [mediumOf(e), 'via-edge', 'via-out', e.hasClass('faded') ? 'faded' : ''].filter(Boolean).join(' ');
+          cy.add({ group: 'edges', data: { id: `${via}>${child}`, source: via, target: child, label: e.data('label') ?? '' }, classes: cls });
+        }
+      });
     } else {
       const xs = tidyX(items, { gap: GAP });
-      pos = new Map(items.map((it) => [it.id, { x: xs.get(it.id), y: it.level * ROW_GAP }]));
+      cy.batch(() => nodes.forEach((n) => n.position({ x: xs.get(n.id()), y: order.get(n.id()).level * ROW_GAP })));
     }
-    cy.batch(() => nodes.forEach((n) => n.position(pos.get(n.id()))));
+    applyRouting();
     cy.fit(undefined, 40);
+  }
+
+  /** 直角連線：不同種類的連線各走一條主幹（見 orthogonalRoutes）；直線模式清掉這些設定 */
+  function applyRouting() {
+    if (!cy) return;
+    cy.batch(() => {
+      if (edgeStyle !== 'orthogonal') {
+        cy.edges().removeStyle('source-endpoint taxi-turn');
+        return;
+      }
+      const pos = new Map(cy.nodes().map((n) => [n.id(), n.position()]));
+      const shown = cy.edges().filter((e) => !e.hasClass('routed') && !e.hasClass('via-out'));
+      const edges = shown.map((e) => ({ id: e.id(), source: e.data('source'), target: e.data('target'), medium: e.classes().find((c) => c.startsWith('m-')) ?? 'm-other' }));
+      const routes = orthogonalRoutes(edges, pos);
+      shown.forEach((e) => {
+        const r = routes.get(e.id());
+        if (r) e.style({ 'source-endpoint': `${r.dx}px 50%`, 'taxi-turn': r.turn });
+      });
+      // 轉接點 → 下游：一路往下，到下游樓層才橫移（負值＝從下游往回算），橫線落在樓層之間的空白
+      cy.edges('.via-out').forEach((e) => e.style({ 'source-endpoint': '0px 0px', 'taxi-turn': -VIA_TURN }));
+    });
   }
 
   function applyFaded() {
@@ -275,7 +322,7 @@ export async function createTopologyView(host, ctx) {
     const faded = fadedIds(data.devices, filtersNow());
     cy.batch(() => {
       cy.nodes().forEach((n) => {
-        if (!n.data('isFloor')) n.toggleClass('faded', faded.has(n.id()));
+        if (!n.data('isFloor') && !n.data('isVia')) n.toggleClass('faded', faded.has(n.id()));
       });
       cy.edges().forEach((e) => e.toggleClass('faded', faded.has(e.data('source')) || faded.has(e.data('target'))));
     });
@@ -320,7 +367,9 @@ export async function createTopologyView(host, ctx) {
 
   // ------------------------------------------------------------ 主題切換：重讀 CSS 變數並重套樣式
   const restyle = () => {
-    if (cy) cy.style(buildStyle(readColors(), { edgeStyle }));
+    if (!cy) return;
+    cy.style(buildStyle(readColors(), { edgeStyle }));
+    applyRouting();
   };
   const observer = new MutationObserver(restyle);
   observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });

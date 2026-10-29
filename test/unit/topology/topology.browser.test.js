@@ -235,6 +235,39 @@ describe('架構圖（Chromium）', async () => {
     assert.deepEqual(problems, []);
   });
 
+  test('直角＋分群：跨樓層連線經轉接點、每台設備仍只有一條可見進線', { skip }, async () => {
+    const { page, problems } = await boot();
+    await ready(page);
+    await page.getByRole('radio', { name: '直角' }).click();
+    const info = () => page.evaluate(() => {
+      const cy = document.querySelector('.tp-stage').__cy;
+      const shown = cy.edges().filter((e) => !e.hasClass('routed') && !e.target().data('isVia'));
+      const into = {};
+      shown.forEach((e) => { into[e.target().id()] = (into[e.target().id()] ?? 0) + 1; });
+      const devices = cy.nodes().filter((n) => !n.data('isFloor') && !n.data('isVia'));
+      return {
+        vias: cy.nodes('.via').length,
+        devices: devices.length,
+        roots: devices.filter((n) => !into[n.id()]).length,
+        multi: Object.values(into).filter((n) => n > 1).length,
+      };
+    });
+    const flat = await info();
+    assert.equal(flat.vias, 0);
+    assert.equal(flat.roots, 1);
+    await page.click('.tp-group');
+    await page.waitForFunction(() => document.querySelector('.tp-stage').__cy.nodes('.floor').length > 0);
+    const g = await info();
+    assert.ok(g.vias > 0, '有跨樓層連線就要有轉接點');
+    assert.equal(g.devices, flat.devices);
+    assert.equal(g.roots, 1);
+    assert.equal(g.multi, 0);
+    await page.click('.tp-group');
+    await page.waitForFunction(() => document.querySelector('.tp-stage').__cy.nodes('.floor').length === 0);
+    assert.equal((await info()).vias, 0);
+    assert.deepEqual(problems, []);
+  });
+
   test('深色主題：切換 data-theme 後樣式重套（邊標籤底色跟著 --surface）', { skip }, async () => {
     const { page, problems } = await boot();
     await ready(page);
