@@ -224,47 +224,66 @@ describe('架構圖（Chromium）', async () => {
     const curve = () => page.evaluate(() => document.querySelector('.tp-stage').__cy.edges()[0].style('curve-style'));
     assert.equal(await curve(), 'bezier');
     await page.getByRole('radio', { name: '直角' }).click();
-    assert.equal(await curve(), 'taxi');
+    assert.equal(await curve(), 'segments');
     await shot(page, 'topology-orthogonal.png');
     await page.reload();
     await ready(page);
-    assert.equal(await curve(), 'taxi');
+    assert.equal(await curve(), 'segments');
     assert.equal(await page.getByRole('radio', { name: '直角' }).getAttribute('aria-checked'), 'true');
     await page.getByRole('radio', { name: '直線' }).click();
     assert.equal(await curve(), 'bezier');
     assert.deepEqual(problems, []);
   });
 
-  test('直角＋分群：跨樓層連線經轉接點、每台設備仍只有一條可見進線', { skip }, async () => {
+  test('直角連線：不分群、分群、拖曳設備後，都沒有斜線，任兩條線的水平、垂直段都不重疊', { skip }, async () => {
     const { page, problems } = await boot();
     await ready(page);
     await page.getByRole('radio', { name: '直角' }).click();
-    const info = () => page.evaluate(() => {
+    const check = () => page.evaluate(() => {
       const cy = document.querySelector('.tp-stage').__cy;
-      const shown = cy.edges().filter((e) => !e.hasClass('routed') && !e.target().data('isVia'));
-      const into = {};
-      shown.forEach((e) => { into[e.target().id()] = (into[e.target().id()] ?? 0) + 1; });
-      const devices = cy.nodes().filter((n) => !n.data('isFloor') && !n.data('isVia'));
-      return {
-        vias: cy.nodes('.via').length,
-        devices: devices.length,
-        roots: devices.filter((n) => !into[n.id()]).length,
-        multi: Object.values(into).filter((n) => n > 1).length,
-      };
+      const segs = [];
+      const bad = [];
+      cy.edges().forEach((e) => {
+        const pts = [e.sourceEndpoint(), ...(e.segmentPoints() ?? []), e.targetEndpoint()];
+        for (let i = 1; i < pts.length; i++) {
+          const [a, b] = [pts[i - 1], pts[i]];
+          const v = Math.abs(a.x - b.x) < 0.5;
+          const h = Math.abs(a.y - b.y) < 0.5;
+          if (v && h) continue;
+          if (!v && !h) bad.push(`斜線 ${e.id()}`);
+          segs.push({ id: e.id(), v, c: v ? a.x : a.y, lo: Math.min(v ? a.y : a.x, v ? b.y : b.x), hi: Math.max(v ? a.y : a.x, v ? b.y : b.x) });
+        }
+      });
+      for (let i = 0; i < segs.length; i++) {
+        for (let j = i + 1; j < segs.length; j++) {
+          const [a, b] = [segs[i], segs[j]];
+          if (a.id !== b.id && a.v === b.v && Math.abs(a.c - b.c) < 3 && a.lo < b.hi - 0.5 && b.lo < a.hi - 0.5) bad.push(`重疊 ${a.id} / ${b.id}`);
+        }
+      }
+      return { edges: cy.edges().length, segs: segs.length, bad };
     });
-    const flat = await info();
-    assert.equal(flat.vias, 0);
-    assert.equal(flat.roots, 1);
+    const flat = await check();
+    assert.ok(flat.segs > flat.edges, '有轉彎');
+    assert.deepEqual(flat.bad, []);
     await page.click('.tp-group');
     await page.waitForFunction(() => document.querySelector('.tp-stage').__cy.nodes('.floor').length > 0);
-    const g = await info();
-    assert.ok(g.vias > 0, '有跨樓層連線就要有轉接點');
-    assert.equal(g.devices, flat.devices);
-    assert.equal(g.roots, 1);
-    assert.equal(g.multi, 0);
-    await page.click('.tp-group');
-    await page.waitForFunction(() => document.querySelector('.tp-stage').__cy.nodes('.floor').length === 0);
-    assert.equal((await info()).vias, 0);
+    assert.deepEqual((await check()).bad, []);
+    assert.deepEqual(await overlaps(page), []);
+    await shot(page, 'topology-orthogonal-grouped.png');
+    // 拖曳一台設備：走線跟著重算
+    const box = await page.evaluate(() => {
+      const cy = document.querySelector('.tp-stage').__cy;
+      const n = cy.nodes().filter((x) => !x.data('isFloor') && x.outgoers('edge').length > 1)[0];
+      const p = n.renderedPosition();
+      const r = document.querySelector('.tp-stage').getBoundingClientRect();
+      return { x: r.left + p.x, y: r.top + p.y };
+    });
+    await page.mouse.move(box.x, box.y);
+    await page.mouse.down();
+    await page.mouse.move(box.x + 30, box.y + 10, { steps: 5 });
+    await page.mouse.up();
+    await page.waitForTimeout(100);
+    assert.deepEqual((await check()).bad, []);
     assert.deepEqual(problems, []);
   });
 

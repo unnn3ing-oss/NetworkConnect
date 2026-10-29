@@ -141,36 +141,196 @@ export function treeOrder(items, { gap = 100 } = {}) {
   return out;
 }
 
+const LABEL_SPACE = 22; // 節點下方名稱佔的高度：橫線不能從名稱上穿過
+const EDGE_MARGIN = 10; // 橫線離下一排節點頂端至少多遠
+const TRACK_MIN = 8; // 同一段空白裡兩條橫線的最小間距；不夠就把下面的列往下推
+const LANE_GAP = 8; // 跨多列的垂直線彼此間距
+const LANE_CLEAR = 54; // 跨多列的垂直線離途經節點（含名稱）的最小水平距離
+const NEAR = 5; // 兩條垂直線水平距離小於這個值就算疊在一起
+const PAD = 4; // 同一高度的兩段橫線端點至少相隔多遠
+
 /**
- * 直角連線的走線：同一台設備往下的連線依「連線種類」（有線、Wi-Fi、Mesh、光纖…）分組，
- * 每組各走一條主幹——從設備底部出發的位置左右錯開（dx），橫向主幹的高度也錯開（turn）。
- * 否則不同種類的連線會共用同一段線，實線、虛線、點線疊在一起分不出來。同種類的連線共用主幹沒有問題（樣式相同）。
- * @param {{id: string, source: string, target: string, medium: string}[]} edges
- * @param {Map<string, {x: number, y: number}>} pos 節點位置
- * @returns {Map<string, {dx: number, turn: number}>} dx＝出發點相對設備中心的水平位移（px）；turn＝離開設備後多遠轉彎（px）
+ * 直角連線走線：每條連線都只走水平、垂直，而且任兩條連線的水平段、垂直段都不會疊在一起。
+ * - 從上游底部出發：同一台上游的每條連線出發點左右錯開（依下游位置由左到右排，避免互相交叉）；
+ *   下游正下方的那條會對齊成一直線。出發點也會避開下一排其他設備的進線位置。
+ * - 相鄰兩排：在兩排之間的空白找一條自己的橫線高度（track），橫移到下游正上方再往下進入。
+ * - 跨好幾排（分群時跨樓層、或往上連）：先橫移到一條自己的垂直通道（lane），通道避開途經的設備與名稱，
+ *   到下游上方那段空白再橫移進入。
+ * - 同一段空白裡會互相重疊的橫線分到不同高度；高度不夠時（shiftRows）把下面的列往下推。
+ * @param {{id: string, x: number, y: number, w: number, h: number}[]} nodes 節點中心與寬高
+ * @param {{id: string, source: string, target: string, lane?: number}[]} edges lane＝跨多排時希望的垂直通道 x
+ * @param {{shiftRows?: boolean}} [opts]
+ * @returns {{routes: Map<string, {dx: number, corners: {x: number, y: number}[]}>, positions: Map<string, {x: number, y: number}>}}
+ *   dx＝出發點相對上游中心的水平位移；corners＝轉角（不含起點與終點）；positions＝（推移後的）節點位置
  */
-export function orthogonalRoutes(edges, pos, { stemGap = 16, baseTurn = 34, turnStep = 10 } = {}) {
-  const bySource = new Map();
-  for (const e of edges) {
-    if (!pos.has(e.source) || !pos.has(e.target)) continue;
-    const groups = bySource.get(e.source) ?? new Map();
-    bySource.set(e.source, groups);
-    groups.set(e.medium, [...(groups.get(e.medium) ?? []), e]);
+export function routeOrthogonal(nodes, edges, { shiftRows = true } = {}) {
+  const byId = new Map(nodes.map((n) => [n.id, { ...n }]));
+  const list = [...byId.values()];
+  const ys = [...new Set(list.map((n) => Math.round(n.y)))].sort((a, b) => a - b);
+  const rowOf = new Map(ys.map((y, i) => [y, i]));
+  const rows = ys.map(() => []);
+  for (const n of list) {
+    n.row = rowOf.get(Math.round(n.y));
+    rows[n.row].push(n);
   }
-  const out = new Map();
-  for (const groups of bySource.values()) {
-    // 依下游設備的平均 x 由左到右排：左邊那組從左邊出發，主幹才不會互相穿過
-    const list = [...groups.values()]
-      .map((es) => ({ es, mid: es.reduce((s, e) => s + pos.get(e.target).x, 0) / es.length }))
-      .sort((a, b) => a.mid - b.mid);
-    const n = list.length;
-    list.forEach(({ es }, i) => {
-      const dx = n > 1 ? (i - (n - 1) / 2) * stemGap : 0;
-      const turn = baseTurn + i * turnStep;
-      for (const e of es) out.set(e.id, { dx, turn });
+  const R = rows.length;
+  const es = [];
+  for (const e of edges) {
+    const s = byId.get(e.source);
+    const t = byId.get(e.target);
+    if (!s || !t || s === t) continue;
+    // g1＝上游下方那段空白；g2＝下游上方那段空白（-1＝第一排上方，R-1＝最後一排下方）
+    es.push({ id: e.id, s, t, lane: e.lane, g1: s.row, g2: t.row - 1, direct: t.row === s.row + 1 });
+  }
+
+  // 1. 出發點
+  const bySource = new Map();
+  for (const e of es) bySource.set(e.s, [...(bySource.get(e.s) ?? []), e]);
+  for (const [s, out] of bySource) {
+    const aim = (e) => (e.direct ? e.t.x : e.lane ?? (s.x + e.t.x) / 2);
+    out.sort((a, b) => aim(a) - aim(b));
+    const k = out.length;
+    const half = s.w / 2 - 2;
+    const step = k > 1 ? Math.min(12, Math.max(6, (s.w - 12) / (k - 1))) : 0;
+    const base = out.map((_, i) => (i - (k - 1) / 2) * step);
+    const finals = s.row + 1 < R ? rows[s.row + 1].map((n) => n.x) : [];
+    const ok = (d) =>
+      out.every((e, i) => {
+        const x = s.x + base[i] + d;
+        return finals.every((f) => Math.abs(x - f) >= NEAR || (e.direct && e.t.x === f && Math.abs(x - f) < 0.01));
+      });
+    const straighten = out
+      .map((e, i) => (e.direct ? e.t.x - s.x - base[i] : null))
+      .filter((d) => d !== null && base.every((b) => Math.abs(b + d) <= half))
+      .sort((a, b) => Math.abs(a) - Math.abs(b));
+    const tries = [...straighten];
+    for (let i = 0; i <= 60; i++) tries.push(i / 2, -i / 2);
+    const d = tries.find(ok) ?? 0;
+    out.forEach((e, i) => {
+      e.dx = base[i] + d;
+      e.sx = s.x + e.dx;
     });
   }
-  return out;
+
+  // 2. 跨多排的垂直通道
+  const lanes = [];
+  const stemsIn = (g) => es.filter((o) => o.s.row === g).map((o) => o.sx);
+  for (const e of es.filter((x) => !x.direct).sort((a, b) => (a.lane ?? a.t.x) - (b.lane ?? b.t.x))) {
+    const down = e.t.row > e.s.row;
+    const rLo = down ? e.s.row + 1 : e.t.row;
+    const rHi = down ? e.t.row - 1 : e.s.row;
+    const gLo = Math.min(e.g1, e.g2);
+    const gHi = Math.max(e.g1, e.g2);
+    const near = [];
+    for (let r = rLo; r <= rHi; r++) for (const n of rows[r]) near.push([n.x, LANE_CLEAR]);
+    for (let g = gLo; g <= gHi; g++) {
+      for (const x of stemsIn(g)) near.push([x, NEAR]);
+      if (g + 1 < R) for (const n of rows[g + 1]) near.push([n.x, NEAR]);
+    }
+    for (const l of lanes) if (l.gLo <= gHi && gLo <= l.gHi) near.push([l.x, LANE_GAP - 0.5]);
+    const blocked = (x) => near.some(([c, r]) => Math.abs(x - c) < r);
+    const pref = e.lane ?? (e.sx + e.t.x) / 2;
+    let x = pref;
+    for (let i = 1; blocked(x) && i < 4000; i++) x = pref + Math.ceil(i / 2) * (i % 2 ? 1 : -1) * (LANE_GAP / 2);
+    e.lx = x;
+    lanes.push({ x, gLo, gHi });
+  }
+
+  // 3. 每段空白裡的橫線高度
+  const segs = new Map();
+  const addSeg = (g, a, b, e, key, which) => {
+    if (Math.abs(a - b) < 0.5) return;
+    const sg = { lo: Math.min(a, b), hi: Math.max(a, b), e, key, which };
+    segs.set(g, [...(segs.get(g) ?? []), sg]);
+  };
+  for (const e of es) {
+    const firstTo = e.direct ? e.t.x : e.lx;
+    addSeg(e.g1, e.sx, firstTo, e, `${e.s.id}|${Math.sign(firstTo - e.sx)}`, 'y1');
+    if (!e.direct) addSeg(e.g2, e.lx, e.t.x, e, null, 'y2');
+  }
+  const overlap = (a, b) => a.lo < b.hi + PAD && b.lo < a.hi + PAD;
+  const count = new Map();
+  for (const [g, list2] of segs) {
+    // 長的放上面：同一台上游往同一側的扇形連線，越遠的越高，彼此才不會交叉
+    list2.sort((a, b) => b.hi - b.lo - (a.hi - a.lo));
+    const done = [];
+    for (const sg of list2) {
+      let t = 0;
+      for (const o of done) if (sg.key && o.key === sg.key && overlap(o, sg)) t = Math.max(t, o.t + 1);
+      while (done.some((o) => o.t === t && overlap(o, sg))) t++;
+      sg.t = t;
+      done.push(sg);
+    }
+    count.set(g, Math.max(...done.map((o) => o.t)) + 1);
+  }
+
+  // 4. 空白不夠放橫線時，把下面的列往下推
+  const topOf = (r) => Math.min(...rows[r].map((n) => n.y - n.h / 2));
+  const bottomOf = (r) => Math.max(...rows[r].map((n) => n.y + n.h / 2)) + LABEL_SPACE;
+  const need = (g) => ((count.get(g) ?? 0) + 1) * TRACK_MIN;
+  let acc = 0;
+  for (let r = 0; r < R; r++) {
+    for (const n of rows[r]) n.y += acc;
+    if (shiftRows && r + 1 < R) {
+      const room = topOf(r + 1) + acc - EDGE_MARGIN - bottomOf(r);
+      if (room < need(r)) acc += need(r) - room;
+    }
+  }
+  const box = (g) => {
+    let top;
+    let bottom;
+    if (g < 0) {
+      bottom = topOf(0) - EDGE_MARGIN;
+      top = bottom - Math.max(40, need(g));
+    } else if (g >= R - 1) {
+      top = bottomOf(R - 1);
+      bottom = top + Math.max(40, need(g));
+    } else {
+      top = bottomOf(g);
+      bottom = topOf(g + 1) - EDGE_MARGIN;
+      if (bottom - top < need(g)) bottom = top + need(g); // 只會在使用者拖曳後發生
+    }
+    return { top, bottom };
+  };
+  for (const [g, list2] of segs) {
+    const { top, bottom } = box(g);
+    const n = count.get(g);
+    for (const sg of list2) sg.e[sg.which] = top + ((sg.t + 1) * (bottom - top)) / (n + 1);
+  }
+
+  // 5. 轉角
+  const routes = new Map();
+  for (const e of es) {
+    let corners;
+    if (e.direct) {
+      // 對齊成一直線的那條也給一個轉角（在線上），Cytoscape 才會照著出發點畫成垂直線
+      corners = e.y1 === undefined ? [{ x: e.t.x, y: (e.s.y + e.s.h / 2 + e.t.y - e.t.h / 2) / 2 }] : [{ x: e.sx, y: e.y1 }, { x: e.t.x, y: e.y1 }];
+    } else {
+      corners = [];
+      if (e.y1 !== undefined) corners.push({ x: e.sx, y: e.y1 }, { x: e.lx, y: e.y1 });
+      if (e.y2 !== undefined) corners.push({ x: e.lx, y: e.y2 }, { x: e.t.x, y: e.y2 });
+    }
+    routes.set(e.id, { dx: e.dx, corners });
+  }
+  return { routes, positions: new Map(list.map((n) => [n.id, { x: n.x, y: n.y }])) };
+}
+
+/**
+ * 把絕對座標的轉角換成 Cytoscape segments 連線用的 segment-weights／segment-distances
+ * （edge-distances: node-position：以上游中心 → 下游中心這條線為基準）。
+ * @param {{x: number, y: number}[]} points
+ * @param {{x: number, y: number}} S 上游中心
+ * @param {{x: number, y: number}} T 下游中心
+ */
+export function toSegments(points, S, T) {
+  const dx = T.x - S.x;
+  const dy = T.y - S.y;
+  const len2 = dx * dx + dy * dy || 1;
+  const len = Math.sqrt(len2);
+  return {
+    weights: points.map((p) => ((p.x - S.x) * dx + (p.y - S.y) * dy) / len2),
+    distances: points.map((p) => ((p.y - S.y) * dx - (p.x - S.x) * dy) / len), // Cytoscape 的法向量是 (-dy, dx)
+  };
 }
 
 /**

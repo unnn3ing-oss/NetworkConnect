@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { spread, tidyX, bandLayout, levelsByY, treeOrder, orthogonalRoutes, crossFloorVias } from '../../../web/modules/topology/layout.js';
+import { spread, tidyX, bandLayout, levelsByY, treeOrder, routeOrthogonal, toSegments, crossFloorVias } from '../../../web/modules/topology/layout.js';
 
 const GAP = 100;
 const it = (id, level, x, parent = null, group = null) => ({ id, level, x, parent, group });
@@ -111,31 +111,107 @@ describe('treeOrder', () => {
   });
 });
 
-describe('orthogonalRoutes', () => {
-  const pos = new Map([['sw', { x: 0 }], ['a', { x: -200 }], ['b', { x: -100 }], ['c', { x: 200 }], ['d', { x: 300 }], ['x', { x: 0 }]]);
+/** 把 routeOrthogonal 的結果展開成折線（含起點與終點），回傳斜線與任兩條連線重疊的段落 */
+function routeProblems(nodes, edges, out) {
+  const pos = out.positions;
+  const byId = new Map(nodes.map((n) => [n.id, n]));
+  const segs = [];
+  const bad = [];
+  for (const e of edges) {
+    const r = out.routes.get(e.id);
+    const s = { ...byId.get(e.source), ...pos.get(e.source) };
+    const t = { ...byId.get(e.target), ...pos.get(e.target) };
+    const pts = [{ x: s.x + r.dx, y: s.y + s.h / 2 }, ...r.corners, { x: t.x, y: t.y - t.h / 2 }];
+    for (let i = 1; i < pts.length; i++) {
+      const [a, b] = [pts[i - 1], pts[i]];
+      const v = Math.abs(a.x - b.x) < 0.01;
+      const h = Math.abs(a.y - b.y) < 0.01;
+      if (v && h) continue;
+      if (!v && !h) bad.push(`斜線 ${e.id}`);
+      segs.push({ id: e.id, v, c: v ? a.x : a.y, lo: Math.min(v ? a.y : a.x, v ? b.y : b.x), hi: Math.max(v ? a.y : a.x, v ? b.y : b.x) });
+    }
+  }
+  for (let i = 0; i < segs.length; i++) {
+    for (let j = i + 1; j < segs.length; j++) {
+      const [a, b] = [segs[i], segs[j]];
+      if (a.id !== b.id && a.v === b.v && Math.abs(a.c - b.c) < 3 && a.lo < b.hi - 0.5 && b.lo < a.hi - 0.5) bad.push(`重疊 ${a.id} / ${b.id}（${a.v ? '垂直' : '水平'}）`);
+    }
+  }
+  return bad;
+}
 
-  test('同一來源只有一種連線：從中間出發、轉折高度用基準值', () => {
-    const r = orthogonalRoutes([{ id: 'e1', source: 'sw', target: 'a', medium: 'm-wired' }], pos);
-    assert.deepEqual(r.get('e1'), { dx: 0, turn: 34 });
+/** 可重現的亂數 */
+function rng(seed) {
+  let x = seed;
+  return () => ((x = (x * 1103515245 + 12345) % 2147483648) / 2147483648);
+}
+
+describe('routeOrthogonal', () => {
+  const node = (id, x, y, w = 44) => ({ id, x, y, w, h: w });
+
+  test('一台交換器接一排設備：每條線各自的出發點與橫線高度，正下方那條是直線', () => {
+    const nodes = [node('sw', 0, 0, 52), ...[-208, -104, 0, 104, 208].map((x, i) => node(`c${i}`, x, 130, 38))];
+    const edges = nodes.slice(1).map((n) => ({ id: `e${n.id}`, source: 'sw', target: n.id }));
+    const out = routeOrthogonal(nodes, edges);
+    assert.deepEqual(routeProblems(nodes, edges, out), []);
+    const dxs = edges.map((e) => out.routes.get(e.id).dx);
+    assert.equal(new Set(dxs).size, dxs.length);
+    assert.ok(dxs.every((d, i) => i === 0 || d > dxs[i - 1]), '出發點由左到右對應下游由左到右');
+    assert.equal(out.routes.get('ec2').corners.length, 1, '正下方的那條沒有轉彎');
   });
 
-  test('不同連線種類分開出發點與轉折高度；同種共用；左邊那組從左邊出發', () => {
-    const r = orthogonalRoutes([
-      { id: 'w1', source: 'sw', target: 'c', medium: 'm-wired' },
-      { id: 'w2', source: 'sw', target: 'd', medium: 'm-wired' },
-      { id: 'p1', source: 'sw', target: 'a', medium: 'm-poe' },
-      { id: 'p2', source: 'sw', target: 'b', medium: 'm-poe' },
-    ], pos);
-    assert.deepEqual(r.get('p1'), r.get('p2'));
-    assert.deepEqual(r.get('w1'), r.get('w2'));
-    assert.ok(r.get('p1').dx < r.get('w1').dx);
-    assert.notEqual(r.get('p1').turn, r.get('w1').turn);
-    assert.equal(r.get('p1').dx + r.get('w1').dx, 0);
+  test('隨機樹（含跨多列與往上的連線）：沒有斜線、任兩條線都不重疊', () => {
+    for (let seed = 1; seed <= 200; seed++) {
+      const r = rng(seed);
+      const items = [{ id: 'n0' }];
+      const count = 6 + Math.floor(r() * 30);
+      for (let i = 1; i < count; i++) items.push({ id: `n${i}`, parent: `n${Math.floor(r() * i)}` });
+      const order = treeOrder(items, { gap: 104 });
+      const levels = new Map(items.map((it) => [it.id, order.get(it.id).level]));
+      const xs = tidyX(items.map((it) => ({ ...it, ...order.get(it.id) })), { gap: 104 });
+      // 部分節點搬到別的列，模擬分群時的跨樓層（往下、往上都有）
+      const maxLevel = Math.max(...levels.values()) + 3;
+      const nodes = [];
+      for (const it of items) {
+        let lv = levels.get(it.id);
+        let x = xs.get(it.id);
+        const moved = Math.floor(r() * maxLevel);
+        // 同一列的設備至少相隔 90px（實際排版的間距是 104）；太近就再往下一列
+        if (r() < 0.15) [lv, x] = [moved, x + 52];
+        while (nodes.some((n) => n.y === lv * 130 && Math.abs(n.x - x) < 90)) lv++;
+        nodes.push(node(it.id, x, lv * 130, [38, 44, 52][Math.floor(r() * 3)]));
+      }
+      const edges = items.filter((it) => it.parent).map((it) => ({ id: `e${it.id}`, source: it.parent, target: it.id }));
+      const out = routeOrthogonal(nodes, edges);
+      assert.deepEqual(routeProblems(nodes, edges, out), [], `seed ${seed}`);
+    }
   });
 
-  test('端點不在 pos 裡的連線略過', () => {
-    const r = orthogonalRoutes([{ id: 'e', source: 'sw', target: 'nope', medium: 'm-wired' }], pos);
-    assert.equal(r.size, 0);
+  test('橫線太多放不下：把下面的列往下推；shiftRows: false 時不動', () => {
+    const nodes = [node('sw', 0, 0, 58), ...Array.from({ length: 12 }, (_, i) => node(`c${i}`, (i - 5.5) * 104, 130, 38))];
+    const edges = nodes.slice(1).map((n) => ({ id: `e${n.id}`, source: 'sw', target: n.id }));
+    const out = routeOrthogonal(nodes, edges);
+    assert.ok(out.positions.get('c0').y > 130);
+    assert.equal(out.positions.get('sw').y, 0);
+    assert.deepEqual(routeProblems(nodes, edges, out), []);
+    assert.equal(routeOrthogonal(nodes, edges, { shiftRows: false }).positions.get('c0').y, 130);
+  });
+
+  test('跨多列的通道避開途經的設備', () => {
+    const nodes = [node('a', 0, 0), node('mid', 0, 130), node('b', 0, 260)];
+    const edges = [{ id: 'e', source: 'a', target: 'b' }];
+    const out = routeOrthogonal(nodes, edges);
+    const lane = out.routes.get('e').corners[1].x;
+    assert.ok(Math.abs(lane) >= 54);
+    assert.deepEqual(routeProblems(nodes, edges, out), []);
+  });
+});
+
+describe('toSegments', () => {
+  test('weights 沿上游→下游方向；distances 用 Cytoscape 的法向量 (-dy, dx)', () => {
+    const { weights, distances } = toSegments([{ x: 0, y: 50 }, { x: -10, y: 50 }], { x: 0, y: 0 }, { x: 0, y: 100 });
+    assert.deepEqual(weights, [0.5, 0.5]);
+    assert.deepEqual(distances, [0, 10]);
   });
 });
 
